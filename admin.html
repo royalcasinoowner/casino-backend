@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Casino - Admin Control Room</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-dark: #07060f;
+            --bg-panel: rgba(18, 15, 34, 0.75);
+            --border-purple: rgba(139, 92, 246, 0.25);
+            --border-purple-glow: rgba(139, 92, 246, 0.6);
+            --text-main: #f3f1f7;
+            --text-dim: #a19bb8;
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.5);
+            --accent-crimson: #f43f5e;
+            --accent-green: #10b981;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.95) 0px, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-purple);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.15);
+        }
+
+        .table-row:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <!-- Access Denied Screen -->
+    <div id="unauthorized-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md hidden">
+        <div class="glass-panel p-8 sm:p-12 max-w-md w-full mx-4 border-2 border-rose-500/40 text-center">
+            <i class="fa-solid fa-ban text-6xl text-rose-500 mb-4"></i>
+            <h1 class="text-3xl font-black text-rose-500 uppercase tracking-tighter mb-2">Access Denied</h1>
+            <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+                This console is reserved for Royal Casino Administrators only. Please return to the main lobby portal.
+            </p>
+            <a href="/" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider text-white inline-block">
+                Back to Lobby
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Workspace Dashboard -->
+    <div id="admin-workspace" class="max-w-7xl mx-auto space-y-6">
+
+        <!-- Top Header Navigation -->
+        <div class="glass-panel px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-r from-purple-600 to-rose-600 w-10 h-10 rounded-xl flex items-center justify-center border border-purple-500/30 shadow-lg">
+                    <i class="fa-solid fa-user-shield text-lg text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight leading-none">
+                        CASINO <span class="text-purple-400 font-extrabold">CONTROL PANEL</span>
+                    </h1>
+                    <p class="text-[10px] text-rose-400 uppercase tracking-widest font-semibold mt-1">Admin Operations Console</p>
+                </div>
+            </div>
+
+            <!-- Portal Links -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs bg-purple-950/40 text-purple-400 border border-purple-900/30 px-3.5 py-1 rounded-full font-bold">Admin Session Active</span>
+                <a href="/" class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors" title="Exit to Lobby">
+                    <i class="fa-solid fa-home text-sm"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main stats summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider">Real Online Users</div>
+                    <div id="stats-users-count" class="text-2xl font-black mt-0.5">0</div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-dharmachakra"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider">Spinner active players</div>
+                    <div id="stats-spinner-count" class="text-2xl font-black mt-0.5">0</div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-cards"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-500 uppercase font-extrabold tracking-wider">Matka active players</div>
+                    <div id="stats-matka-count" class="text-2xl font-black mt-0.5">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Table & Game Override Columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- LEFT 2 COLUMNS: Users database manager -->
+            <div class="lg:col-span-2 glass-panel p-6 flex flex-col h-[520px]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold tracking-tight text-purple-300 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-database text-purple-400"></i> Users Accounts Database
+                    </h2>
+                    <button onclick="refreshUsersDatabase()" class="text-xs bg-[#191530] text-[#a594f9] border border-[#2b2553] px-3.5 py-1.5 rounded-lg font-bold hover:bg-[#252046] transition-all">
+                        <i class="fa-solid fa-rotate mr-1"></i> Refresh Table
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-purple-500/20 text-slate-500 text-[10px] uppercase font-extrabold tracking-widest bg-black/10">
+                                <th class="p-3.5">Username</th>
+                                <th class="p-3.5">UID</th>
+                                <th class="p-3.5 text-right">Balance</th>
+                                <th class="p-3.5">Role</th>
+                                <th class="p-3.5 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="text-sm font-semibold divide-y divide-purple-500/5">
+                            <!-- User row generated dynamic -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RIGHT 1 COLUMN: Game manipulations center -->
+            <div class="space-y-6">
+                <!-- Royal Spinner Overrides -->
+                <div class="glass-panel p-6 space-y-4">
+                    <h2 class="text-sm font-extrabold text-rose-400 uppercase tracking-wider flex items-center gap-2 border-b border-rose-500/10 pb-2">
+                        <i class="fa-solid fa-dharmachakra"></i> Spinner Manipulation
+                    </h2>
+                    
+                    <div id="spinner-status-box" class="bg-black/35 p-3 rounded-xl border border-rose-500/5 text-[10px] space-y-1">
+                        <div><span class="text-slate-500">Current Phase:</span> <span id="spinner-phase" class="font-extrabold text-rose-400">...</span></div>
+                        <div><span class="text-slate-500">Seconds remaining:</span> <span id="spinner-timer" class="font-bold text-white">...</span></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] font-extrabold uppercase text-slate-500 mb-1.5 block tracking-wider">Select forced winning number</label>
+                            <select id="override-spinner-select" class="w-full bg-[#110e20] border border-[#2e2646] rounded-xl px-3 py-2.5 text-white outline-none focus:border-rose-500 text-xs font-semibold">
+                                <option value="0">0 (Green - x14)</option>
+                                <option value="11">11 (Black - x2)</option>
+                                <option value="5">5 (Red - x2)</option>
+                                <option value="10">10 (Black - x2)</option>
+                                <option value="6">6 (Red - x2)</option>
+                                <option value="9">9 (Black - x2)</option>
+                                <option value="7">7 (Red - x2)</option>
+                                <option value="8">8 (Black - x2)</option>
+                                <option value="1">1 (Red - x2)</option>
+                                <option value="14">14 (Black - x2)</option>
+                                <option value="2">2 (Red - x2)</option>
+                                <option value="13">13 (Black - x2)</option>
+                                <option value="3">3 (Red - x2)</option>
+                                <option value="12">12 (Black - x2)</option>
+                                <option value="4">4 (Red - x2)</option>
+                            </select>
+                        </div>
+                        <button onclick="submitSpinnerOverride()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl transition-all uppercase tracking-wider text-[10px]">
+                            Force Spin Outcome
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Matka Poker Overrides -->
+                <div class="glass-panel p-6 space-y-4">
+                    <h2 class="text-sm font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-2 border-b border-purple-500/10 pb-2">
+                        <i class="fa-solid fa-cards"></i> Matka Manipulation
+                    </h2>
+                    
+                    <div id="matka-status-box" class="bg-black/35 p-3 rounded-xl border border-purple-500/5 text-[10px] space-y-1">
+                        <div><span class="text-slate-500">Current Phase:</span> <span id="matka-phase" class="font-extrabold text-purple-400">...</span></div>
+                        <div><span class="text-slate-500">Seconds remaining:</span> <span id="matka-timer" class="font-bold text-white">...</span></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] font-extrabold uppercase text-slate-500 mb-1.5 block tracking-wider">Select forced winning card</label>
+                            <select id="override-matka-select" class="w-full bg-[#110e20] border border-[#2e2646] rounded-xl px-3 py-2.5 text-white outline-none focus:border-purple-500 text-xs font-semibold">
+                                <option value="">No Active Dealt Cards...</option>
+                            </select>
+                        </div>
+                        <button onclick="submitMatkaOverride()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-extrabold py-3.5 rounded-xl transition-all uppercase tracking-wider text-[10px]">
+                            Force Matka Outcome
+                        </button>
+                    </div>
+                <!-- Global Settings -->
+                <div class="glass-panel p-6 space-y-4">
+                    <h2 class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-500/10 pb-2">
+                        <i class="fa-solid fa-cogs"></i> Global Settings
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] font-extrabold uppercase text-slate-500 mb-1.5 block tracking-wider">Referral Commission (%)</label>
+                            <input type="number" id="setting-referral-percent" placeholder="e.g. 20" class="w-full bg-[#110e20] border border-[#2e2646] rounded-xl px-3 py-2.5 text-white outline-none focus:border-emerald-500 text-xs font-semibold" />
+                            <p class="text-[9px] text-slate-500 mt-1">Percentage of deposit given to referrer.</p>
+                        </div>
+                        <button onclick="saveGlobalSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl transition-all uppercase tracking-wider text-[10px]">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Socket.io connection script -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io(); // Connect to default / namespace
+        const matkaSocket = io('/matka'); // Connect to matka namespace
+
+        let myId = localStorage.getItem('PLAYER_UID') || 'guest';
+        let myName = localStorage.getItem('PLAYER_NAME') || 'guest';
+
+        // Check if logged in user is admin
+        window.addEventListener('DOMContentLoaded', () => {
+            if (myName.toLowerCase() !== 'admin') {
+                document.getElementById('unauthorized-screen').classList.remove('hidden');
+                document.getElementById('admin-workspace').classList.add('hidden');
+            } else {
+                initAdminDashboard();
+            }
+        });
+
+        function initAdminDashboard() {
+            // Register session
+            socket.emit('join', { id: myId, name: myName });
+
+            // Fetch players database
+            refreshUsersDatabase();
+
+            // Listen for general game state updates (Spinner)
+            socket.on('gameStateUpdate', (state) => {
+                document.getElementById('spinner-phase').textContent = state.phase;
+                document.getElementById('spinner-timer').textContent = state.timer;
+                
+                // Dim control box if not in betting phase
+                const input = document.getElementById('override-spinner-select');
+                if (state.phase !== 'BETTING') {
+                    input.disabled = true;
+                } else {
+                    input.disabled = false;
+                }
+            });
+
+            // Listen for Matka game state updates
+            matkaSocket.on('gameStateUpdate', (state) => {
+                document.getElementById('matka-phase').textContent = state.phase;
+                document.getElementById('matka-timer').textContent = state.timer;
+
+                // Sync the 11 dealt cards inside the select selector option list
+                const select = document.getElementById('override-matka-select');
+                if (state.pickedCards && state.pickedCards.length > 0) {
+                    const currentVal = select.value;
+                    
+                    // Render option nodes
+                    select.innerHTML = state.pickedCards.map(card => `
+                        <option value="${card}">${card}</option>
+                    `).join('');
+
+                    // Preserve selected value if still in list
+                    if (state.pickedCards.includes(currentVal)) {
+                        select.value = currentVal;
+                    }
+                } else {
+                    select.innerHTML = `<option value="">No Active Dealt Cards...</option>`;
+                }
+
+                if (state.phase !== 'CHOOSING') {
+                    select.disabled = true;
+                } else {
+                    select.disabled = false;
+                }
+            });
+
+            // Listen for global counts
+            socket.on('globalStatsUpdate', (stats) => {
+                document.getElementById('stats-users-count').textContent = stats.totalConnections || 0;
+                document.getElementById('stats-spinner-count').textContent = stats.spinnerActive || 0;
+                document.getElementById('stats-matka-count').textContent = stats.matkaActive || 0;
+            });
+        }
+
+        // Fetch users database mapping
+        function refreshUsersDatabase() {
+            socket.emit('adminGetUsers', (res) => {
+                if (res.error) {
+                    alert("Unauthorized!");
+                    return;
+                }
+
+                const body = document.getElementById('users-table-body');
+                if (res.users && res.users.length > 0) {
+                    body.innerHTML = res.users.map(u => `
+                        <tr class="table-row border-b border-purple-500/5">
+                            <td class="p-3.5 text-slate-200">${u.name}</td>
+                            <td class="p-3.5 font-mono text-[10px] text-slate-500">${u.uid}</td>
+                            <td class="p-3.5 text-right text-amber-400 font-extrabold">$${Number(u.balance).toLocaleString()}</td>
+                            <td class="p-3.5">
+                                <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${u.role === 'admin' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}">
+                                    ${u.role}
+                                </span>
+                            </td>
+                            <td class="p-3.5 text-center">
+                                <button onclick="editUserBalance('${u.uid}', ${u.balance})" class="text-[10px] bg-[#1a1738] hover:bg-[#2e2664] border border-[#3b327f] text-slate-300 font-bold px-3 py-1.5 rounded-lg transition-all">
+                                    Edit Balance
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-600 italic">No users found</td></tr>`;
+                }
+            });
+        }
+
+        // Edit balance click action
+        function editUserBalance(uid, currentBalance) {
+            const promptVal = prompt(`Enter new balance for user (${uid}):`, currentBalance);
+            if (promptVal === null) return; // cancel
+            
+            const newBal = parseInt(promptVal);
+            if (isNaN(newBal) || newBal < 0) {
+                alert("Invalid balance number value entered!");
+                return;
+            }
+
+            socket.emit('adminEditBalance', { targetUid: uid, newBalance: newBal }, (res) => {
+                if (res.error) {
+                    alert(`Error: ${res.error}`);
+                    return;
+                }
+                alert("Balance updated successfully!");
+                refreshUsersDatabase();
+            });
+        }
+
+        // Override Casino Spinner Outcome
+        function submitSpinnerOverride() {
+            const select = document.getElementById('override-spinner-select');
+            const target = select.value;
+            if (!target) return;
+
+            socket.emit('adminOverrideSpinner', { targetNumber: target }, (res) => {
+                if (res.error) {
+                    alert(`Error: ${res.error}`);
+                    return;
+                }
+                alert(`Next spin outcome successfully locked to: ${target}`);
+            });
+        }
+
+        // Override Matka Poker Outcome
+        function submitMatkaOverride() {
+            const select = document.getElementById('override-matka-select');
+            const target = select.value;
+            if (!target) {
+                alert("No card selected, or game is not in CHOOSING phase.");
+                return;
+            }
+
+            socket.emit('adminOverrideMatka', { targetCardCode: target }, (res) => {
+                if (res.error) {
+                    alert(`Error: ${res.error}`);
+                    return;
+                }
+                alert(`Next Matka card draw successfully locked to: ${target}`);
+            });
+        }
+
+        // Fetch and Save Settings
+        async function fetchSettings() {
+            try {
+                const res = await fetch('/api/admin/settings/referral_percentage');
+                const data = await res.json();
+                if (data.success && data.value) {
+                    document.getElementById('setting-referral-percent').value = data.value;
+                }
+            } catch (e) {
+                console.error("Failed to load settings");
+            }
+        }
+
+        async function saveGlobalSettings() {
+            const val = document.getElementById('setting-referral-percent').value;
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'referral_percentage', value: val })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Settings saved successfully!");
+                } else {
+                    alert("Error saving settings.");
+                }
+            } catch (e) {
+                alert("Error saving settings.");
+            }
+        }
+
+        // Fetch settings on load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (myName.toLowerCase() === 'admin') {
+                fetchSettings();
+            }
+        });
+    </script>
+</body>
+</html>

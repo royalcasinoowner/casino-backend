@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aviator — Crash Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Nunito+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js"></script>
+<style>
+  :root {
+    --bg-0: #020617;
+    --bg-1: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #334155;
+    --border-soft: #475569;
+    --text: #f8fafc;
+    --text-dim: #94a3b8;
+    --green: #22c55e;
+    --green-dark: #166534;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --blue-chip: #38bdf8;
+    --purple-chip: #a855f7;
+    --pink-chip: #ec4899;
+    --gold-chip: #fbbf24;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg-0);
+    font-family: 'Nunito Sans', sans-serif;
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    user-select: none;
+  }
+  
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  /* ---------- History bar ---------- */
+  #historyBar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: linear-gradient(to right, rgba(2, 6, 23, 0.95), rgba(15, 23, 42, 0.6)), url('./assets/forest_casino_bg.png') center/cover;
+    background-blend-mode: overlay;
+    border-bottom: 2px solid rgba(234, 179, 8, 0.2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    z-index: 20;
+    box-shadow: inset 0 -4px 20px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6);
+  }
+  #historyBar::-webkit-scrollbar, #betPanels::-webkit-scrollbar, #gameStage::-webkit-scrollbar { display: none; }
+  #betPanels, #gameStage { scrollbar-width: none; }
+  
+  .chip {
+    flex: 0 0 auto;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 2px 5px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    transition: transform 0.2s;
+  }
+  .chip:hover { transform: scale(1.05); }
+  .chip.c-low { border-color: rgba(56, 189, 248, 0.3); color: var(--blue-chip); text-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
+  .chip.c-mid { border-color: rgba(168, 85, 247, 0.3); color: var(--purple-chip); text-shadow: 0 0 10px rgba(168, 85, 247, 0.6); }
+  .chip.c-high { border-color: rgba(236, 72, 153, 0.3); color: var(--pink-chip); text-shadow: 0 0 10px rgba(236, 72, 153, 0.6); }
+  .chip.c-huge { border-color: rgba(251, 191, 36, 0.5); color: var(--gold-chip); text-shadow: 0 0 12px rgba(251, 191, 36, 0.8); box-shadow: inset 0 2px 4px rgba(251, 191, 36, 0.2), 0 0 10px rgba(251, 191, 36, 0.2); }
+  
+  #balanceWrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #balanceDisplay {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--green);
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  #balanceDisplay span { color: var(--text-dim); font-weight: 700; margin-right: 4px; font-family: 'Nunito Sans', sans-serif; }
+  
+  #muteBtn {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-dim);
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  #muteBtn:hover { background: var(--panel-2); color: #fff; }
+  #muteBtn.muted { color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
+
+  #topControls {
+    position: absolute;
+    top: 50px; left: 10px; right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 30;
+  }
+  #topControls > * { pointer-events: auto; }
+
+  @keyframes panBackground {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.05) translate(-2%, 2%); }
+  }
+  .bg-particle {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: #eab308;
+    box-shadow: 0 0 10px 3px #ca8a04;
+    border-radius: 50%;
+    opacity: 0;
+    animation: floatParticle linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes floatParticle {
+    0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+    20% { opacity: 0.5; }
+    80% { opacity: 0.5; }
+    100% { transform: translate(20px, -100px) scale(1.5); opacity: 0; }
+  }
+  #gameStage {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: #000;
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.9);
+  }
+  #gameStage::before {
+    content: '';
+    position: absolute;
+    top: -5%; left: -5%; right: -5%; bottom: -5%;
+    background: url('./assets/forest_casino_bg.png') center/cover no-repeat;
+    opacity: 0.35;
+    animation: panBackground 30s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #gameStage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  #pixiHost { position: absolute; inset: 0; z-index: 2; }
+  #pixiHost canvas { display: block; width: 100%; height: 100%; }
+  
+  #centerOverlay {
+    position: absolute;
+    left: 50%; top: 38%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 30;
+  }
+  #multiplierText {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(60px, 12vw, 130px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.2), 0 8px 25px rgba(0,0,0,0.8);
+    letter-spacing: -2px;
+    transition: color 0.1s ease, transform 0.1s ease, text-shadow 0.1s ease;
+  }
+  #multiplierText.crashed {
+    color: var(--red);
+    text-shadow: 0 0 40px rgba(239, 68, 68, 0.6), 0 8px 25px rgba(0,0,0,0.8);
+    transform: scale(0.95);
+  }
+  #statusText {
+    margin-top: 5px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--amber);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    min-width: 260px;
+  }
+  
+  #countdownRing {
+    margin: 15px auto 0;
+    width: 120px; height: 120px;
+    position: relative;
+    display: none;
+    filter: drop-shadow(0 8px 15px rgba(0,0,0,0.8));
+  }
+  .propeller-timer { width: 100%; height: 100%; transform-origin: center center; will-change: transform; }
+  #countdownNum {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900; font-size: 36px; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,1);
+    z-index: 2;
+  }
+
+  #betPanels {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5)), url('./assets/forest_casino_bg.png') bottom/cover;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.7);
+    z-index: 20;
+  }
+  .bet-panel {
+    flex: 1 1 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .stepper-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 12px;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .step-btn {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    border: none;
+    background: var(--panel-2);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: all 0.15s;
+  }
+  .step-btn:active { background: #475569; transform: scale(0.92); }
+  .amount-input {
+    flex: 1 1 auto;
+    background: transparent;
+    border: none;
+    text-align: center;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    outline: none;
+    min-width: 0;
+  }
+  .quick-row { display: flex; gap: 8px; }
+  .quick-btn {
+    flex: 1 1 0;
+    border: none;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-dim);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .quick-btn:active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  
+  .bet-button {
+    border: none;
+    border-radius: 12px;
+    background: var(--green);
+    color: #022c15;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    padding: 14px 0 16px;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.25), inset 0 -4px 0 rgba(0,0,0,0.15);
+    position: relative; /* For floating text */
+    overflow: visible;
+  }
+  .bet-button:active { transform: translateY(4px); box-shadow: 0 2px 10px rgba(34, 197, 94, 0.2), inset 0 -2px 0 rgba(0,0,0,0.15); }
+  .bet-button .bb-top { font-size: 14px; letter-spacing: 1px; opacity: 0.9; text-transform: uppercase; }
+  .bet-button .bb-bottom { font-size: 22px; margin-top: 2px; }
+  
+  .bet-button.state-queued { background: var(--amber); color: #451a03; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25), inset 0 -4px 0 rgba(0,0,0,0.15); }
+  .bet-button.state-flying { background: var(--amber); color: #451a03; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25), inset 0 -4px 0 rgba(0,0,0,0.15); }
+  .bet-button.state-cashed { background: var(--panel-2); color: var(--green); box-shadow: none; pointer-events: none; border: 1px solid var(--green); }
+  .bet-button.state-disabled { background: var(--panel-2); color: var(--text-dim); cursor: default; box-shadow: none; border: 1px solid #ef4444; }
+
+  /* Brand New Animations */
+  @keyframes popInGlow {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 rgba(34,197,94,0); }
+    50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(34,197,94,0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(34,197,94,0.4); }
+  }
+  @keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); box-shadow: 0 0 20px rgba(239,68,68,0.8); }
+    40%, 80% { transform: translateX(6px); box-shadow: 0 0 20px rgba(239,68,68,0.8); }
+  }
+  @keyframes floatUpFade {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -100%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -200%) scale(1); opacity: 0; }
+  }
+  .anim-won { animation: popInGlow 0.6s ease-out forwards; }
+  .anim-lost { animation: shakeError 0.5s ease-in-out forwards; }
+  
+  .floating-text {
+    position: absolute;
+    left: 50%; top: 30%;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 26px;
+    pointer-events: none;
+    z-index: 50;
+    animation: floatUpFade 1.5s forwards;
+    text-shadow: 0 3px 6px rgba(0,0,0,0.9);
+    white-space: nowrap;
+  }
+  .floating-win { color: #4ade80; }
+  .floating-loss { color: #f87171; }
+
+  @keyframes balanceAdd {
+    0% { transform: scale(1); color: var(--text); }
+    50% { transform: scale(1.25); color: #4ade80; text-shadow: 0 0 10px rgba(74,222,128,0.8); }
+    100% { transform: scale(1); color: var(--text); }
+  }
+  @keyframes balanceDeduct {
+    0% { transform: scale(1); color: var(--text); }
+    50% { transform: scale(1.25); color: #f87171; text-shadow: 0 0 10px rgba(248,113,113,0.8); }
+    100% { transform: scale(1); color: var(--text); }
+  }
+  .anim-balance-add { animation: balanceAdd 0.6s ease-out; display: inline-block; }
+  .anim-balance-deduct { animation: balanceDeduct 0.6s ease-out; display: inline-block; }
+
+  .options-row { display: flex; gap: 8px; }
+  .opt-btn {
+    flex: 1 1 0;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(0,0,0,0.3);
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.2s;
+  }
+  .opt-btn.active { background: rgba(56, 189, 248, 0.15); color: var(--blue-chip); border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 0 10px rgba(56, 189, 248, 0.1); }
+  
+  .auto-co-input {
+    width: 60px;
+    background: #050510;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px; font-weight: 800;
+    text-align: center;
+    padding: 6px 4px;
+    outline: none;
+    display: none;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+  }
+  .auto-co-input.show { display: inline-block; border-color: var(--blue-chip); }
+
+  @media (max-width: 768px) {
+    #betPanels { flex-direction: column; padding: 6px; gap: 6px; overflow-y: auto; max-height: 48vh; }
+    .bet-panel { padding: 8px 10px; gap: 6px; border-radius: 8px; }
+    .stepper-row { padding: 4px; border-radius: 8px; }
+    .quick-btn { padding: 4px 6px; font-size: 11px; }
+    #centerOverlay { top: 32%; }
+    #historyBar { padding: 6px 8px; }
+    .chip { font-size: 11px; padding: 4px 8px; }
+    .step-btn { width: 34px; height: 34px; font-size: 18px; }
+    .amount-input { font-size: 16px; }
+    .bet-button { padding: 8px 0; border-radius: 8px; }
+    .bb-bottom { font-size: 16px; }
+    .bb-top { font-size: 11px; }
+  }
+
+  #back-btn {
+    flex: 0 0 auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-dim);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  #back-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  #back-btn.visible { display: flex; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="historyBar">
+    <div id="historyList" style="display:flex;gap:6px;"></div>
+  </div>
+  <div id="topControls">
+    <button id="back-btn" title="Back to lobby">&#8592; Exit</button>
+    <div id="balanceWrap">
+      <div id="balanceDisplay"><span>Balance</span><span id="balanceValue">1000.00</span></div>
+      <button id="muteBtn" title="Mute sound">🔊</button>
+    </div>
+  </div>
+
+  <div id="gameStage">
+    <div id="pixiHost"></div>
+    <div id="centerOverlay">
+      <div id="multiplierText">1.00x</div>
+      <div id="statusText">WAITING FOR ROUND</div>
+      <div id="countdownRing">
+        <svg class="propeller-timer" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#94a3b8" />
+              <stop offset="50%" stop-color="#cbd5e1" />
+              <stop offset="100%" stop-color="#475569" />
+            </linearGradient>
+            <linearGradient id="blade" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#cbd5e1" />
+              <stop offset="50%" stop-color="#94a3b8" />
+              <stop offset="100%" stop-color="#475569" />
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="2" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <g transform="translate(60,60)">
+            <path d="M-6,0 C-18,-35 -10,-55 0,-55 C10,-55 18,-35 6,0 Z" fill="url(#blade)"/>
+            <path d="M-6,0 C-18,35 -10,55 0,55 C10,55 18,35 6,0 Z" fill="url(#blade)"/>
+            <path d="M0,-6 C-35,-18 -55,-10 -55,0 C-55,10 -35,18 0,6 Z" fill="url(#blade)"/>
+            <path d="M0,-6 C35,-18 55,-10 55,0 C55,10 35,18 0,6 Z" fill="url(#blade)"/>
+          </g>
+          <circle cx="60" cy="60" r="20" fill="url(#metal)" stroke="#0f172a" stroke-width="2"/>
+          <circle cx="60" cy="60" r="8" fill="#020617"/>
+        </svg>
+        <div id="countdownNum">5</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="betPanels">
+    <div class="bet-panel" id="panel1"></div>
+    <div class="bet-panel" id="panel2"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+/* ======================================================================
+   GLOBAL GAME STATE
+   ====================================================================== */
+const STATE = { WAITING:'waiting', FLYING:'flying', CRASHED:'crashed' };
+
+/* ======================================================================
+   EMBEDDED MODE — postMessage wallet bridge
+   ====================================================================== */
+const _params = new URLSearchParams(location.search);
+const _uid = _params.get('uid');
+const _serverUrl = _params.get('server') || (location.origin.includes('localhost') ? 'http://localhost:3000' : location.origin);
+const _embedded = !!_uid;
+
+const game = {
+  state: STATE.WAITING,
+  waitDuration: 5000,
+  waitStart: 0,
+  flyStart: 0,
+  crashPoint: 1,
+  multiplier: 1,
+  adaptiveDuration: 9750,
+  adaptiveDurationTarget: 9750,
+  history: [],
+  balance: _embedded ? 0 : 1000, // 0 until INIT_BALANCE arrives when embedded
+  minBet: 10,
+  maxBet: 50000
+};
+
+const EXP_K = Math.log(2) / 9000;
+
+function computeMultiplier(elapsedMs){ return Math.max(1, Math.exp(EXP_K * elapsedMs)); }
+
+let localFlyStartOffset = 0;
+
+function fmt(n){ return n.toFixed(2); }
+
+const multiplierTextEl = document.getElementById('multiplierText');
+const statusTextEl = document.getElementById('statusText');
+const countdownRing = document.getElementById('countdownRing');
+const countdownNum = document.getElementById('countdownNum');
+const propTimer = countdownRing.querySelector('.propeller-timer');
+const historyList = document.getElementById('historyList');
+const balanceValueEl = document.getElementById('balanceValue');
+const muteBtn = document.getElementById('muteBtn');
+const backBtn = document.getElementById('back-btn');
+const currencyLabel = document.getElementById('currency-label');
+
+// Show back button and update currency label in embedded mode
+if (_embedded) {
+  backBtn.classList.add('visible');
+  if (currencyLabel) currencyLabel.textContent = '';
+  backBtn.addEventListener('click', () => {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'AVIATOR_BACK' }, '*');
+    } else {
+      history.back();
+    }
+  });
+}
+
+// Listen for messages from React parent (balance init, bet results)
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (!d || !d.type) return;
+  if (d.type === 'AVIATOR_INIT') {
+    game.balance = parseFloat(d.balance) || 0;
+    renderBalance();
+  } else if (d.type === 'AVIATOR_LIMITS') {
+    applyBetLimits(d.minBet, d.maxBet);
+  } else if (d.type === 'AVIATOR_BET_OK') {
+    game.balance = parseFloat(d.balance);
+    const p = panels[d.panelIndex];
+    if (p) {
+      if (p._betTimeout) clearTimeout(p._betTimeout);
+      p._betConfirmed = true;
+      p._betPending = false;
+      p.placed = true;
+      p.queued = false;
+      p._promotingFromQueue = false;
+      sound.betPlaced();
+    }
+    renderBalance();
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_BET_FAIL') {
+    const p = panels[d.panelIndex];
+    if (d.balance !== undefined) {
+      game.balance = parseFloat(d.balance);
+      renderBalance();
+    }
+    if (p) {
+      if (p._betTimeout) clearTimeout(p._betTimeout);
+      p._betPending = false;
+      p._betConfirmed = false;
+      if (p._promotingFromQueue) {
+        p.placed = false;
+        p.queued = true;
+        p._promotingFromQueue = false;
+      } else {
+        p.placed = false;
+        p.queued = false;
+      }
+      p._flashErr(d.error || 'FAILED');
+    }
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_CANCEL_OK') {
+    game.balance = parseFloat(d.balance);
+    const p = panels[d.panelIndex];
+    if (p) { p.placed = false; p._betPending = false; p._betConfirmed = false; p.queued = false; }
+    renderBalance();
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_CANCEL_FAIL') {
+    const p = panels[d.panelIndex];
+    if (p) { p._betPending = false; p._flashErr(d.error || 'CANCEL FAIL'); }
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_CASHOUT_OK') {
+    game.balance = parseFloat(d.balance);
+    renderBalance();
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_CASHOUT_FAIL') {
+    const p = panels[d.panelIndex];
+    if (p) {
+       p.cashedOut = false;
+       p.lastPayout = 0;
+       if (p._flashErr) p._flashErr(d.error || 'CASH OUT FAILED');
+    }
+    panels.forEach(p2 => p2._syncBtn && p2._syncBtn());
+  } else if (d.type === 'AVIATOR_BALANCE_UPDATE') {
+    game.balance = parseFloat(d.balance) || game.balance;
+    renderBalance();
+  } else if (d.type === 'AVIATOR_STOP_AUDIO') {
+    if (sound && sound.ctx) { sound.ctx.close(); sound.ctx = null; }
+  } else if (d.type === 'AVIATOR_STATE_UPDATE') {
+    const s = d.state;
+    if (game.history.length === 0 || s.history[s.history.length - 1] !== game.history[game.history.length - 1]) {
+      game.history = [...s.history];
+      if (game.history.length > 20) game.history = game.history.slice(-20);
+      historyList.innerHTML = '';
+      game.history.forEach(v => {
+        const el = document.createElement('div');
+        el.className = 'chip ' + (v>=50?'c-huge':v>=10?'c-high':v>=2?'c-mid':'c-low');
+        el.textContent = fmt(v) + 'x';
+        historyList.appendChild(el);
+      });
+      requestAnimationFrame(()=>{ historyList.parentElement.scrollLeft = historyList.parentElement.scrollWidth; });
+    }
+
+    if (s.phase === 'WAITING' && game.state !== STATE.WAITING) {
+      game.state = STATE.WAITING;
+      game.waitDuration = 5000;
+      game.waitStart = performance.now() - (5000 - s.timer);
+      startWaiting();
+    } else if (s.phase === 'WAITING' && game.state === STATE.WAITING) {
+      game.waitStart = performance.now() - (5000 - s.timer);
+    } else if (s.phase === 'FLYING' && game.state !== STATE.FLYING) {
+      game.state = STATE.FLYING;
+      const elapsed = Math.log(s.currentMultiplier || 1.0) / EXP_K;
+      game.flyStart = performance.now() - elapsed;
+      startFlying();
+    } else if (s.phase === 'FLYING' && game.state === STATE.FLYING) {
+      const elapsed = Math.log(s.currentMultiplier || 1.0) / EXP_K;
+      const targetFlyStart = performance.now() - elapsed;
+      game.flyStart += (targetFlyStart - game.flyStart) * 0.1;
+    } else if (s.phase === 'CRASHED' && game.state !== STATE.CRASHED) {
+      game.state = STATE.CRASHED;
+      game.crashPoint = s.crashPoint || s.currentMultiplier;
+      triggerCrash();
+    }
+  } else if (d.type === 'AVIATOR_PLAYER_BET') {
+    let name = d.data.name || 'User';
+    if (d.data.uid !== _uid) {
+        name = name.length > 2 ? name.charAt(0) + '***' + name.charAt(name.length - 1) : name + '***';
+    }
+    showFloatingToast(`${name} bet ₹${d.data.amount}`, 'bet');
+  } else if (d.type === 'AVIATOR_PLAYER_CASHOUT') {
+    let name = d.data.name || 'User';
+    if (d.data.uid !== _uid) {
+        name = name.length > 2 ? name.charAt(0) + '***' + name.charAt(name.length - 1) : name + '***';
+    }
+    showFloatingToast(`${name} won ₹${fmt(d.data.amount * d.data.multiplier)}`, 'win');
+  }
+});
+
+let toastContainer = null;
+function showFloatingToast(msg, type) {
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.style.position = 'absolute';
+      toastContainer.style.left = '50%';
+      toastContainer.style.bottom = '20px'; // Downwards below the plane line
+      toastContainer.style.transform = 'translateX(-50%)';
+      toastContainer.style.display = 'flex';
+      toastContainer.style.flexDirection = 'column';
+      toastContainer.style.gap = '6px';
+      toastContainer.style.zIndex = '1000';
+      toastContainer.style.pointerEvents = 'none';
+      toastContainer.style.alignItems = 'center';
+      
+      const gameStage = document.getElementById('gameStage');
+      if (gameStage) gameStage.appendChild(toastContainer);
+      else document.body.appendChild(toastContainer);
+
+      const style = document.createElement('style');
+      style.innerHTML = `@keyframes pulseDot { 0% { box-shadow: 0 0 0 0 var(--dot-color); } 70% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }`;
+      document.head.appendChild(style);
+    }
+    
+    while (toastContainer.children.length > 0) {
+        toastContainer.firstChild.remove();
+    }
+
+    const t = document.createElement('div');
+    t.style.display = 'flex';
+    t.style.alignItems = 'center';
+    t.style.padding = '5px 14px 5px 10px';
+    t.style.background = type === 'win' ? 'rgba(21, 128, 61, 0.7)' : 'rgba(15, 23, 42, 0.7)';
+    t.style.backdropFilter = 'blur(10px)';
+    t.style.border = type === 'win' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(56, 189, 248, 0.2)';
+    t.style.color = '#fff';
+    t.style.borderRadius = '30px';
+    t.style.fontSize = '12px';
+    t.style.fontWeight = '700';
+    t.style.fontFamily = "'Montserrat', sans-serif";
+    t.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8)';
+    t.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(20px)'; // Slide UP from the bottom now
+    
+    const color = type === 'win' ? '#4ade80' : '#38bdf8';
+    const rgbaColor = type === 'win' ? 'rgba(74,222,128,0.6)' : 'rgba(56,189,248,0.6)';
+    t.innerHTML = `<div style="--dot-color:${rgbaColor}; width:8px;height:8px;border-radius:50%;background:${color};margin-right:10px; flex-shrink:0; animation: pulseDot 1.5s infinite;"></div><span style="letter-spacing: 0.3px;">${msg}</span>`;
+
+    toastContainer.appendChild(t);
+    
+    requestAnimationFrame(()=>{
+      t.style.opacity = '1';
+      t.style.transform = 'translateY(0)';
+      
+      setTimeout(()=>{
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(15px) scale(0.9)';
+        setTimeout(()=> { if (t.parentElement) t.remove(); }, 300);
+      }, 2000);
+    });
+}
+
+// Render balance
+function renderBalance(){ 
+  const currentText = balanceValueEl.textContent.replace(/,/g, '');
+  const prev = parseFloat(currentText) || 0;
+  
+  if (prev !== 0 && game.balance !== prev) {
+    balanceValueEl.classList.remove('anim-balance-add', 'anim-balance-deduct');
+    void balanceValueEl.offsetWidth;
+    if (game.balance > prev) {
+      balanceValueEl.classList.add('anim-balance-add');
+    } else {
+      balanceValueEl.classList.add('anim-balance-deduct');
+    }
+  }
+  balanceValueEl.textContent = fmt(game.balance); 
+
+  if (typeof panels !== 'undefined') {
+    panels.forEach(p => {
+      if (!p.placed && !p.queued && !p._betPending) {
+         const effectiveMax = Math.min(game.maxBet, Math.max(game.minBet, game.balance));
+         if (p.amount < game.minBet || p.amount > effectiveMax) {
+           p.amount = Math.max(game.minBet, Math.min(effectiveMax, p.amount));
+           if (p.amountInput) p.amountInput.value = fmt(p.amount);
+           if (p._syncBtn) p._syncBtn();
+         }
+      }
+    });
+  }
+}
+
+function applyBetLimits(minBet, maxBet) {
+  if (minBet != null && !isNaN(parseFloat(minBet))) game.minBet = parseFloat(minBet);
+  if (maxBet != null && !isNaN(parseFloat(maxBet))) game.maxBet = parseFloat(maxBet);
+  if (typeof panels === 'undefined') return;
+  panels.forEach(p => {
+    if (p.placed || p.queued || p._betPending) return;
+    const effectiveMax = Math.min(game.maxBet, Math.max(game.minBet, game.balance));
+    if (p.amount < game.minBet) {
+      p.amount = game.minBet;
+    } else if (p.amount > effectiveMax) {
+      p.amount = Math.max(game.minBet, effectiveMax);
+    }
+    if (p.amountInput) p.amountInput.value = fmt(p.amount);
+    if (p._syncBtn) p._syncBtn();
+  });
+}
+
+function spawnFloatingText(parentEl, text, className) {
+  const el = document.createElement('div');
+  el.className = 'floating-text ' + className;
+  el.textContent = text;
+  parentEl.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+function pushHistory(value){
+  game.history.push(value);
+  if (game.history.length > 20) game.history.shift();
+  historyList.innerHTML = '';
+  game.history.forEach(v=>{
+    const d = document.createElement('div');
+    d.className = 'chip ' + (v>=50?'c-huge':v>=10?'c-high':v>=2?'c-mid':'c-low');
+    d.textContent = fmt(v) + 'x';
+    historyList.appendChild(d);
+  });
+  requestAnimationFrame(()=>{ historyList.parentElement.scrollLeft = historyList.parentElement.scrollWidth; });
+}
+[1.83,2.41,1.12,4.67,1.05,3.30,1.91,1.27,12.40,1.63,2.08,7.15].forEach(pushHistory);
+
+/* ======================================================================
+   SOUND ENGINE
+   ====================================================================== */
+function SoundEngine(){
+  this.ctx = null; this.master = null; this.muted = false;
+  this.noiseBuffer = null; this.engineNodes = null;
+}
+SoundEngine.prototype.ensureCtx = function(){
+  if (!this.ctx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted ? 0 : 0.75;
+    this.master.connect(this.ctx.destination);
+    
+    const len = this.ctx.sampleRate * 2;
+    this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = this.noiseBuffer.getChannelData(0);
+    for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+  }
+};
+SoundEngine.prototype.setMuted = function(m){
+  this.muted = m; this.ensureCtx();
+  if (this.master) this.master.gain.setTargetAtTime(m?0:0.75, this.ctx.currentTime, 0.05);
+};
+SoundEngine.prototype.unlock = function(){
+  this.ensureCtx();
+  if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+};
+SoundEngine.prototype.click = function(){
+  this.ensureCtx(); if(!this.ctx) return;
+  const t = this.ctx.currentTime;
+  const osc = this.ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = 800;
+  const g = this.ctx.createGain(); g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.05);
+  osc.connect(g); g.connect(this.master); osc.start(t); osc.stop(t+0.06);
+};
+SoundEngine.prototype.betPlaced = function(){
+  this.ensureCtx(); if(!this.ctx) return;
+  const t = this.ctx.currentTime;
+  const osc = this.ctx.createOscillator(); osc.type = 'sine';
+  osc.frequency.setValueAtTime(500, t); osc.frequency.exponentialRampToValueAtTime(800, t+0.1);
+  const g = this.ctx.createGain(); g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.2);
+  osc.connect(g); g.connect(this.master); osc.start(t); osc.stop(t+0.25);
+};
+SoundEngine.prototype.tick = function(){
+  this.ensureCtx(); if(!this.ctx) return;
+  const t = this.ctx.currentTime;
+  const osc = this.ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 1000;
+  const g = this.ctx.createGain(); g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.05);
+  osc.connect(g); g.connect(this.master); osc.start(t); osc.stop(t+0.06);
+};
+SoundEngine.prototype.takeoff = function(){
+  this.ensureCtx(); if (!this.ctx) return;
+  const t = this.ctx.currentTime;
+  const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuffer;
+  const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(300, t); filter.frequency.exponentialRampToValueAtTime(2200, t+0.5); filter.Q.value = 0.8;
+  const g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32, t+0.12); g.gain.exponentialRampToValueAtTime(0.0001, t+0.55);
+  src.connect(filter); filter.connect(g); g.connect(this.master); src.start(t); src.stop(t+0.6);
+};
+SoundEngine.prototype.cashOut = function(){
+  this.ensureCtx(); if(!this.ctx) return;
+  const t = this.ctx.currentTime;
+  [659.25, 880.00, 1046.50].forEach((f,i)=>{
+    const osc = this.ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f;
+    const g = this.ctx.createGain(); const st = t + i*0.06;
+    g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(0.2, st+0.02); g.gain.exponentialRampToValueAtTime(0.0001, st+0.3);
+    osc.connect(g); g.connect(this.master); osc.start(st); osc.stop(st+0.35);
+  });
+};
+SoundEngine.prototype.flewAway = function(){
+  this.ensureCtx(); if(!this.ctx) return;
+  const t = this.ctx.currentTime;
+  const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuffer;
+  const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(1500, t); filter.frequency.exponentialRampToValueAtTime(8000, t+0.2); filter.frequency.exponentialRampToValueAtTime(200, t+0.6); filter.Q.value = 2;
+  const g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.7, t+0.1); g.gain.exponentialRampToValueAtTime(0.0001, t+0.7);
+  src.connect(filter); filter.connect(g); g.connect(this.master); src.start(t); src.stop(t+0.8);
+};
+SoundEngine.prototype.startEngine = function(){
+  this.ensureCtx(); if (!this.ctx || this.engineNodes) return;
+  const t = this.ctx.currentTime;
+  const osc1 = this.ctx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 50;
+  const osc2 = this.ctx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 50*1.5;
+  const toneFilter = this.ctx.createBiquadFilter(); toneFilter.type = 'lowpass'; toneFilter.frequency.value = 400;
+  const oscGain = this.ctx.createGain(); oscGain.gain.value = 0.15;
+  const noiseSrc = this.ctx.createBufferSource(); noiseSrc.buffer = this.noiseBuffer; noiseSrc.loop = true;
+  const noiseFilter = this.ctx.createBiquadFilter(); noiseFilter.type = 'bandpass'; noiseFilter.frequency.value = 800; noiseFilter.Q.value = 0.8;
+  const noiseGain = this.ctx.createGain(); noiseGain.gain.value = 0.05;
+  const engineGain = this.ctx.createGain(); engineGain.gain.setValueAtTime(0.0001, t); engineGain.gain.exponentialRampToValueAtTime(0.2, t+0.5);
+  osc1.connect(toneFilter); osc2.connect(toneFilter); toneFilter.connect(oscGain); oscGain.connect(engineGain);
+  noiseSrc.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(engineGain);
+  engineGain.connect(this.master);
+  osc1.start(t); osc2.start(t); noiseSrc.start(t);
+  this.engineNodes = { osc1, osc2, toneFilter, noiseSrc, noiseFilter, noiseGain, oscGain, engineGain };
+};
+SoundEngine.prototype.setEngineLevel = function(freqBase, filterFreq, gainLevel){
+  if (!this.engineNodes || !this.ctx) return;
+  const t = this.ctx.currentTime; const n = this.engineNodes;
+  n.osc1.frequency.setTargetAtTime(freqBase, t, 0.1);
+  n.osc2.frequency.setTargetAtTime(freqBase*1.5, t, 0.1);
+  n.toneFilter.frequency.setTargetAtTime(filterFreq, t, 0.1);
+  n.engineGain.gain.setTargetAtTime(gainLevel, t, 0.15);
+};
+SoundEngine.prototype.stopEngine = function(){
+  if (!this.engineNodes || !this.ctx) return;
+  const t = this.ctx.currentTime; const n = this.engineNodes;
+  n.engineGain.gain.cancelScheduledValues(t);
+  n.engineGain.gain.setValueAtTime(n.engineGain.gain.value, t);
+  n.engineGain.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
+  const stopAt = t+0.4;
+  n.osc1.stop(stopAt); n.osc2.stop(stopAt); n.noiseSrc.stop(stopAt);
+  this.engineNodes = null;
+};
+
+const sound = new SoundEngine();
+let isMuted = false;
+muteBtn.addEventListener('click', ()=>{ isMuted = !isMuted; sound.setMuted(isMuted); muteBtn.classList.toggle('muted', isMuted); muteBtn.textContent = isMuted ? '🔇' : '🔊'; });
+window.addEventListener('pointerdown', ()=>sound.unlock(), {once:true});
+
+/* ======================================================================
+   PIXI RENDERING & EXTREME ANIMATIONS
+   ====================================================================== */
+const host = document.getElementById('pixiHost');
+const app = new PIXI.Application({
+  resizeTo: host, backgroundAlpha: 0, antialias: true,
+  resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true,
+});
+host.appendChild(app.view);
+app.stage.sortableChildren = true;
+
+const bgGridLayer = new PIXI.Graphics(); bgGridLayer.zIndex = 1;
+const starLayer = new PIXI.Graphics(); starLayer.zIndex = 2;
+const speedLinesLayer = new PIXI.Graphics(); speedLinesLayer.zIndex = 3;
+const curveLayer = new PIXI.Graphics(); curveLayer.zIndex = 5;
+const planeContainer = new PIXI.Container(); planeContainer.zIndex = 10;
+const boomLayer = new PIXI.Graphics(); boomLayer.zIndex = 15;
+
+const exhaustGraphics = new PIXI.Graphics();
+const farWingGraphics = new PIXI.Graphics();
+const fuselageGraphics = new PIXI.Graphics();
+const nearWingGraphics = new PIXI.Graphics();
+const propGraphics = new PIXI.Graphics();
+
+planeContainer.addChild(exhaustGraphics, farWingGraphics, fuselageGraphics, nearWingGraphics, propGraphics);
+app.stage.addChild(bgGridLayer, starLayer, speedLinesLayer, curveLayer, planeContainer, boomLayer);
+
+function getBounds() {
+  const rect = host.getBoundingClientRect();
+  const w = Math.max(rect.width, 300);
+  const h = Math.max(rect.height, 300);
+  const isMobile = w < 768;
+  return {
+    w: w, h: h,
+    originX: 0, // Aligned perfectly with extreme left edge
+    originY: h * (isMobile ? 0.70 : 0.82),
+    padRight: Math.max(70, w * (isMobile ? 0.18 : 0.15)),
+    padTop: h * (isMobile ? 0.35 : 0.25),
+    scale: Math.max(isMobile ? 0.65 : 0.7, Math.min(1.8, w / 800)),
+    isMobile: isMobile
+  };
+}
+
+function initPlane() {
+  // --- FAR WING ---
+  farWingGraphics.clear();
+  farWingGraphics.beginFill(0x991b1b, 1); 
+  farWingGraphics.moveTo(8, -2); farWingGraphics.lineTo(-4, -16); farWingGraphics.lineTo(-18, -16); farWingGraphics.lineTo(-6, -2);
+  farWingGraphics.endFill();
+
+  // --- ENGINE NOZZLE ---
+  fuselageGraphics.clear();
+  fuselageGraphics.beginFill(0x1e293b, 1);
+  fuselageGraphics.moveTo(-35, -4); fuselageGraphics.lineTo(-42, -5); fuselageGraphics.lineTo(-42, 5); fuselageGraphics.lineTo(-35, 4);
+  fuselageGraphics.endFill();
+  // Glowing internal nozzle ring
+  fuselageGraphics.lineStyle({ width: 2, color: 0xf59e0b, alpha: 0.8 });
+  fuselageGraphics.moveTo(-42, -4); fuselageGraphics.lineTo(-42, 4);
+  fuselageGraphics.lineStyle({ width: 0 });
+
+  // --- MAIN FUSELAGE ---
+  fuselageGraphics.lineStyle({ width: 6, color: 0x000000, alpha: 0.35 });
+  fuselageGraphics.moveTo(25, 8); fuselageGraphics.lineTo(-20, 4);
+  fuselageGraphics.lineStyle({ width: 0 });
+
+  // Core Red Body
+  fuselageGraphics.beginFill(0xdc2626); 
+  fuselageGraphics.moveTo(38, 2); 
+  fuselageGraphics.bezierCurveTo(20, -12, -20, -10, -38, -2); 
+  fuselageGraphics.bezierCurveTo(-20, 10, 20, 12, 38, 2); 
+  fuselageGraphics.endFill();
+
+  // Gloss Highlight (Sharper, more metallic)
+  fuselageGraphics.beginFill(0xffffff, 0.4);
+  fuselageGraphics.moveTo(35, 1); fuselageGraphics.bezierCurveTo(20, -9, -20, -8, -35, -2); fuselageGraphics.lineTo(-35, 0); fuselageGraphics.bezierCurveTo(-20, -6, 20, -7, 35, 2);
+  fuselageGraphics.endFill();
+
+  // Dark Belly
+  fuselageGraphics.beginFill(0x7f1d1d, 0.85);
+  fuselageGraphics.moveTo(35, 3); fuselageGraphics.bezierCurveTo(20, 10, -20, 8, -35, -1); fuselageGraphics.lineTo(-38, -2); fuselageGraphics.bezierCurveTo(-20, 12, 20, 14, 38, 2);
+  fuselageGraphics.endFill();
+
+  // Racing stripe
+  fuselageGraphics.lineStyle({ width: 1.5, color: 0xffffff, alpha: 0.8 });
+  fuselageGraphics.moveTo(32, 2); fuselageGraphics.quadraticCurveTo(0, 4, -34, -2);
+  fuselageGraphics.lineStyle({ width: 0 });
+
+  // Tinted Bubble Cockpit Glass
+  fuselageGraphics.beginFill(0x020617);
+  fuselageGraphics.moveTo(15, -5); fuselageGraphics.bezierCurveTo(5, -16, -12, -14, -18, -6); fuselageGraphics.bezierCurveTo(-10, -5, 5, -4, 15, -5);
+  fuselageGraphics.endFill();
+  // Enhanced Reflection
+  fuselageGraphics.beginFill(0x38bdf8, 0.4); 
+  fuselageGraphics.moveTo(10, -6); fuselageGraphics.bezierCurveTo(2, -13, -8, -12, -14, -7); fuselageGraphics.bezierCurveTo(-8, -8, 2, -8, 10, -6);
+  fuselageGraphics.endFill();
+
+  // Tail Fin
+  fuselageGraphics.beginFill(0xdc2626);
+  fuselageGraphics.moveTo(-22, -6); fuselageGraphics.lineTo(-30, -26); fuselageGraphics.lineTo(-40, -26); fuselageGraphics.lineTo(-34, -4);
+  fuselageGraphics.endFill();
+  fuselageGraphics.beginFill(0xfca5a5, 0.6); // Highlight
+  fuselageGraphics.moveTo(-22, -6); fuselageGraphics.lineTo(-30, -26); fuselageGraphics.lineTo(-33, -26); fuselageGraphics.lineTo(-25, -6);
+  fuselageGraphics.endFill();
+  fuselageGraphics.beginFill(0xffffff, 0.9); // Stripe
+  fuselageGraphics.moveTo(-28, -16); fuselageGraphics.lineTo(-35, -16); fuselageGraphics.lineTo(-36, -13); fuselageGraphics.lineTo(-29, -13);
+  fuselageGraphics.endFill();
+
+  // Silver Nose Cone
+  fuselageGraphics.beginFill(0x94a3b8);
+  fuselageGraphics.moveTo(38, 2); fuselageGraphics.lineTo(42, 1); fuselageGraphics.lineTo(42, -1); fuselageGraphics.lineTo(37, -1);
+  fuselageGraphics.endFill();
+
+  // --- NEAR WING ---
+  nearWingGraphics.clear();
+  nearWingGraphics.beginFill(0xef4444);
+  nearWingGraphics.moveTo(8, 4); nearWingGraphics.lineTo(-8, 28); nearWingGraphics.lineTo(-26, 28); nearWingGraphics.lineTo(-12, 4);  
+  nearWingGraphics.endFill();
+  nearWingGraphics.beginFill(0x991b1b); // Thickness
+  nearWingGraphics.moveTo(-8, 28); nearWingGraphics.lineTo(-26, 28); nearWingGraphics.lineTo(-24, 30); nearWingGraphics.lineTo(-6, 30);
+  nearWingGraphics.endFill();
+  nearWingGraphics.beginFill(0xfca5a5, 0.8); // Highlight
+  nearWingGraphics.moveTo(8, 4); nearWingGraphics.lineTo(-8, 28); nearWingGraphics.lineTo(-6, 28); nearWingGraphics.lineTo(10, 4);
+  nearWingGraphics.endFill();
+  nearWingGraphics.beginFill(0xffffff, 0.9); // Stripe
+  nearWingGraphics.moveTo(-1, 14); nearWingGraphics.lineTo(-13, 28); nearWingGraphics.lineTo(-18, 28); nearWingGraphics.lineTo(-6, 14);
+  nearWingGraphics.endFill();
+
+  propGraphics.position.set(42, 0);
+  exhaustGraphics.position.set(-42, 0);
+}
+initPlane();
+
+function updatePropeller(phase, isFlying) {
+  propGraphics.scale.y = 1; propGraphics.clear();
+  if (isFlying) {
+    propGraphics.beginFill(0xffffff, 0.2); propGraphics.drawEllipse(0, 0, 4, 22); propGraphics.endFill();
+    propGraphics.beginFill(0x000000, 0.1); propGraphics.drawEllipse(0, 0, 2, 18); propGraphics.endFill();
+  }
+  const bladeLen = 20;
+  const y1 = Math.sin(phase) * bladeLen;
+  const y2 = Math.sin(phase + Math.PI/2) * bladeLen;
+  
+  propGraphics.lineStyle({ width: 3, color: 0x1e293b, alpha: isFlying ? 0.4 : 0.95 });
+  propGraphics.moveTo(0, y1); propGraphics.lineTo(0, -y1);
+  propGraphics.lineStyle({ width: 3, color: 0x64748b, alpha: isFlying ? 0.3 : 0.85 });
+  propGraphics.moveTo(0, y2); propGraphics.lineTo(0, -y2);
+  propGraphics.lineStyle({ width: 0 });
+  
+  propGraphics.beginFill(0xe2e8f0, 1); propGraphics.drawEllipse(0, 0, 2, 6); propGraphics.endFill();
+  propGraphics.beginFill(0x64748b, 1); propGraphics.drawEllipse(-1, 0, 1, 4); propGraphics.endFill();
+}
+
+let stars = [];
+function buildStars(){
+  stars = [];
+  for (let i=0;i<110;i++) stars.push({ x: Math.random(), y: Math.random(), r: Math.random()*1.4+0.4, a: Math.random()*0.6+0.25 });
+}
+buildStars();
+
+function drawStars(){
+  const rect = host.getBoundingClientRect();
+  const w = rect.width, h = rect.height;
+  starLayer.clear();
+  stars.forEach(s=>{ starLayer.beginFill(0xffffff, s.a); starLayer.drawCircle(s.x*w, s.y*h, s.r); starLayer.endFill(); });
+}
+app.renderer.on('resize', drawStars); drawStars();
+
+// Parallax Extreme Speed Lines
+let speedLines = Array.from({length: 50}, () => ({
+  x: Math.random(), y: Math.random(),
+  length: Math.random() * 0.08 + 0.02,
+  speed: Math.random() * 0.02 + 0.005,
+  alpha: Math.random() * 0.5 + 0.1,
+  z: Math.random() 
+}));
+
+function drawSpeedLines(dt, isFlying, multiplier) {
+  speedLinesLayer.clear();
+  const b = getBounds();
+  const speedMult = isFlying ? Math.min(multiplier * 2.0, 20) : 0.2;
+  
+  speedLines.forEach(line => {
+    const pSpeed = line.speed * speedMult * (1 + line.z * 1.5);
+    line.x -= pSpeed * dt;
+    if (line.x < -line.length) { line.x = 1 + line.length; line.y = Math.random(); }
+    
+    let color = 0x475569; // Idle gray
+    if (isFlying && multiplier > 2) {
+      if (line.z > 0.8) color = 0xffffff; // Hyper fast white streaks
+      else if (Math.random() > 0.7) color = 0xf59e0b; // Orange streaks
+      else color = 0xef4444; // Red streaks
+    }
+    
+    const strokeW = isFlying ? (1 + line.z * 2.5) : 1;
+    speedLinesLayer.lineStyle({ width: strokeW, color: color, alpha: line.alpha * (isFlying ? 1 : 0.3) });
+    speedLinesLayer.moveTo(line.x * b.w, line.y * b.h);
+    speedLinesLayer.lineTo((line.x + line.length * (isFlying ? speedMult * 0.1 : 1)) * b.w, line.y * b.h);
+    speedLinesLayer.lineStyle({ width: 0 });
+  });
+}
+
+function drawGrid(shiftX) {
+  const b = getBounds(); const cellSize = b.w > 800 ? 80 : 50;
+  bgGridLayer.clear();
+  bgGridLayer.lineStyle({ width: 1, color: 0xffffff, alpha: 0.04 });
+  for (let y = 0; y < b.h; y += cellSize) { bgGridLayer.moveTo(0, y); bgGridLayer.lineTo(b.w, y); }
+  const offsetX = shiftX % cellSize;
+  for (let x = -cellSize; x < b.w + cellSize; x += cellSize) { bgGridLayer.moveTo(x - offsetX, 0); bgGridLayer.lineTo(x - offsetX, b.h); }
+  bgGridLayer.lineStyle({ width: 0 });
+}
+
+function renderCurve(elapsedMs, motionDistance){
+  const b = getBounds();
+  game.adaptiveDuration += (game.adaptiveDurationTarget - game.adaptiveDuration) * 0.08;
+  if (elapsedMs > game.adaptiveDurationTarget * 0.88) game.adaptiveDurationTarget *= 1.6;
+
+  const graphW = Math.max(60, b.w - b.originX - b.padRight);
+  const graphH = Math.max(60, b.originY - b.padTop);
+  const SEGMENTS = 60; const EXP_SHAPE = 1.8;
+  const pts = [];
+  
+  for (let i=0;i<=SEGMENTS;i++){
+    const p = Math.min(1, (elapsedMs * (i / SEGMENTS)) / game.adaptiveDuration);
+    pts.push({ x: b.originX + p * graphW, y: b.originY - graphH * Math.pow(p, EXP_SHAPE) });
+  }
+
+  curveLayer.clear();
+  const groundY = b.originY + 16 * b.scale;
+  
+  curveLayer.beginFill(0xff0000, 0.15);
+  curveLayer.moveTo(b.originX, groundY); curveLayer.lineTo(b.originX, b.originY); 
+  pts.forEach(pt=> curveLayer.lineTo(pt.x, pt.y));
+  curveLayer.lineTo(pts[pts.length-1].x, groundY); 
+  curveLayer.endFill();
+
+  curveLayer.lineStyle({ width: b.isMobile ? 8 : 12, color: 0xff0000, alpha: 0.3 });
+  curveLayer.moveTo(b.originX, b.originY); pts.forEach(pt=> curveLayer.lineTo(pt.x, pt.y));
+
+  curveLayer.lineStyle({ width: b.isMobile ? 2 : 4, color: 0xffffff, alpha: 1 });
+  curveLayer.moveTo(b.originX, b.originY); pts.forEach(pt=> curveLayer.lineTo(pt.x, pt.y));
+  
+  curveLayer.lineStyle({ width: 2, color: 0x2a2f5a, alpha: 0.8 });
+  curveLayer.moveTo(0, groundY); curveLayer.lineTo(b.w, groundY);
+  curveLayer.lineStyle({ width: 0 });
+
+  const last = pts[pts.length-1];
+  const prev = pts[pts.length-2] || last;
+  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+  
+  // Smooth sine-wave turbulence (No jitter)
+  let turbX = 0, turbY = 0;
+  if (game.state === STATE.FLYING) {
+      const shake = Math.min(game.multiplier * 0.2, 2.5);
+      const now = performance.now();
+      turbX = Math.sin(now * 0.015) * shake + Math.cos(now * 0.025) * (shake * 0.5);
+      turbY = Math.cos(now * 0.02) * shake + Math.sin(now * 0.035) * (shake * 0.5);
+  }
+  
+  // Perfect alignment to exhaust nozzle
+  const exhaustOffsetX = -38 * b.scale;
+  const exhaustOffsetY = -1 * b.scale;
+  const offsetX = - (Math.cos(angle) * exhaustOffsetX - Math.sin(angle) * exhaustOffsetY);
+  const offsetY = - (Math.sin(angle) * exhaustOffsetX + Math.cos(angle) * exhaustOffsetY);
+  
+  planeContainer.position.set(last.x + turbX + offsetX, last.y + turbY + offsetY + takeoffBobOffset);
+  planeContainer.rotation = angle;
+}
+
+function createPanel(containerId, defaultAmount){
+  const root = document.getElementById(containerId);
+  root.innerHTML = `
+    <div class="stepper-row">
+      <button class="step-btn" data-act="minus">−</button>
+      <input class="amount-input" type="text" inputmode="decimal" value="${fmt(defaultAmount)}">
+      <button class="step-btn" data-act="plus">+</button>
+    </div>
+    <div class="quick-row">
+      <button class="quick-btn" data-val="10">10</button>
+      <button class="quick-btn" data-val="50">50</button>
+      <button class="quick-btn" data-val="100">100</button>
+      <button class="quick-btn" data-val="500">500</button>
+    </div>
+    <button class="bet-button state-ready">
+      <div class="bb-top">BET</div>
+      <div class="bb-bottom">${fmt(defaultAmount)} DMO</div>
+    </button>
+    <div class="options-row">
+      <button class="opt-btn auto-btn">↻ Auto</button>
+      <button class="opt-btn co-btn">⏱ Cashout
+        <input class="auto-co-input" type="text" inputmode="decimal" value="2.00">
+      </button>
+    </div>
+  `;
+
+  const panel = {
+    amountInput: root.querySelector('.amount-input'),
+    betBtn: root.querySelector('.bet-button'),
+    autoBtn: root.querySelector('.auto-btn'),
+    coBtn: root.querySelector('.co-btn'),
+    coInput: root.querySelector('.auto-co-input'),
+    stepBtns: root.querySelectorAll('.step-btn'),
+    quickBtns: root.querySelectorAll('.quick-btn'),
+    amount: defaultAmount, placed: false, queued: false, cashedOut: false,
+    autoplay: false, autoCashOutOn: false, autoCashOutValue: 2.00, lastPayout: 0,
+  };
+
+  function clampAmount(v){ 
+    const effectiveMax = Math.min(game.maxBet, Math.max(game.minBet, game.balance));
+    return Math.max(game.minBet, Math.min(effectiveMax, Math.round(v*100)/100)); 
+  }
+
+  panel.amountInput.addEventListener('change', ()=>{
+    if (panel.placed || panel.queued || panel._betPending) {
+      panel.amountInput.value = fmt(panel.amount);
+      return;
+    }
+    panel.amount = clampAmount(parseFloat(panel.amountInput.value) || game.minBet);
+    panel.amountInput.value = fmt(panel.amount); syncButton();
+  });
+  panel.amountInput.addEventListener('blur', ()=>panel.amountInput.dispatchEvent(new Event('change')));
+
+  root.querySelectorAll('.step-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (panel.placed || panel.queued || panel._betPending) return;
+      sound.click();
+      const step = panel.amount >= 100 ? 50 : (panel.amount >= 20 ? 10 : 1);
+      panel.amount = clampAmount(panel.amount + (btn.dataset.act === 'plus' ? step : -step));
+      panel.amountInput.value = fmt(panel.amount); syncButton();
+    });
+  });
+
+  root.querySelectorAll('.quick-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (panel.placed || panel.queued || panel._betPending) return;
+      sound.click(); panel.amount = clampAmount(parseFloat(btn.dataset.val));
+      panel.amountInput.value = fmt(panel.amount); syncButton();
+    });
+  });
+
+  panel.autoBtn.addEventListener('click', ()=>{
+    sound.click(); panel.autoplay = !panel.autoplay;
+    panel.autoBtn.classList.toggle('active', panel.autoplay);
+    if (panel.autoplay && game.state === STATE.WAITING && !panel.placed) tryPlaceBet(panel);
+  });
+
+  panel.coBtn.addEventListener('click', (e)=>{
+    if (e.target === panel.coInput) return;
+    sound.click(); panel.autoCashOutOn = !panel.autoCashOutOn;
+    panel.coBtn.classList.toggle('active', panel.autoCashOutOn);
+    panel.coInput.classList.toggle('show', panel.autoCashOutOn);
+  });
+  
+  panel.coInput.addEventListener('change', ()=>{
+    panel.autoCashOutValue = Math.max(1.01, parseFloat(panel.coInput.value) || 2.00);
+    panel.coInput.value = fmt(panel.autoCashOutValue);
+  });
+  panel.coInput.addEventListener('click', e => e.stopPropagation());
+
+  panel.betBtn.addEventListener('click', ()=>{
+    if (panel._betPending && !panel._betConfirmed) return;
+    if (game.state === STATE.WAITING){
+      if (panel.placed && panel._betConfirmed) cancelBet(panel);
+      else if (!panel.placed && !panel.queued) tryPlaceBet(panel);
+    } else if (game.state === STATE.FLYING){
+      if (panel.placed && panel._betConfirmed && !panel.cashedOut) cashOut(panel);
+      else if (!panel.placed && !panel.queued) queueBet(panel);
+      else if (panel.queued) unqueueBet(panel);
+    } else if (game.state === STATE.CRASHED){
+      if (!panel.placed && !panel.queued) queueBet(panel);
+      else if (panel.queued) unqueueBet(panel);
+    }
+  });
+
+  function sendBetToServer(p, fromQueue) {
+    if (p._betPending) return false;
+    const timeRemaining = game.state === STATE.WAITING ? game.waitDuration - (performance.now() - game.waitStart) : 0;
+    if (game.state === STATE.WAITING && timeRemaining < 800) {
+      p._flashErr && p._flashErr('TOO LATE');
+      return false;
+    }
+    if (game.balance < p.amount) { p._flashErr && p._flashErr(); return false; }
+    p._betPending = true;
+    p._betConfirmed = false;
+    p.cashedOut = false;
+    p._promotingFromQueue = !!fromQueue;
+    if (p._betTimeout) clearTimeout(p._betTimeout);
+    p._betTimeout = setTimeout(() => {
+      if (!p._betPending || p._betConfirmed) return;
+      p._betPending = false;
+      p.placed = false;
+      if (p._promotingFromQueue) {
+        p.queued = true;
+        p._promotingFromQueue = false;
+      }
+      p._flashErr && p._flashErr('TIMEOUT');
+      syncButton();
+    }, 8000);
+    if (_embedded) {
+      window.parent.postMessage({ type: 'AVIATOR_BET', amount: p.amount, panelIndex: panels.indexOf(p) }, '*');
+    } else {
+      game.balance -= p.amount;
+      p.placed = true;
+      p._betConfirmed = true;
+      p._betPending = false;
+      if (fromQueue) p.queued = false;
+      sound.betPlaced();
+      renderBalance();
+    }
+    syncButton();
+    return true;
+  }
+
+  function tryPlaceBet(p){
+    if (p._betPending || p.placed) return;
+    sendBetToServer(p, false);
+  }
+  function queueBet(p){
+    if (_embedded) {
+      if (p._betPending) return;
+      if (game.balance < p.amount) { p._flashErr && p._flashErr(); return; }
+      game.balance -= p.amount; renderBalance();
+      // DO NOT postMessage here. Wait until WAITING phase.
+      p.queued = true;
+      sound.betPlaced(); syncButton();
+    } else {
+      if (game.balance < p.amount) { flashErr(); return; }
+      game.balance -= p.amount; p.queued = true;
+      sound.betPlaced(); renderBalance(); syncButton();
+    }
+  }
+  function unqueueBet(p){ game.balance += p.amount; p.queued = false; p._betPending = false; sound.click(); renderBalance(); syncButton(); }
+  function cancelBet(p){ 
+    if (_embedded) {
+       if (p._betPending && !p._betConfirmed) return;
+       if (!p.placed || !p._betConfirmed) return;
+       p._betPending = true;
+       syncButton();
+       window.parent.postMessage({ type: 'AVIATOR_CANCEL_BET', panelIndex: panels.indexOf(p) }, '*');
+    } else {
+       game.balance += p.amount; p.placed = false; p._betPending = false; p._betConfirmed = false;
+       sound.click(); renderBalance(); syncButton(); 
+    }
+  }
+  
+  function flashErr(){
+    panel.betBtn.classList.add('state-disabled');
+    const prev = panel.betBtn.querySelector('.bb-top').textContent;
+    panel.betBtn.querySelector('.bb-top').textContent = 'FUNDS?';
+    setTimeout(()=>{ panel.betBtn.querySelector('.bb-top').textContent = prev; syncButton(); }, 1000);
+  }
+
+  // Exposed so message listener can call
+  panel._flashErr = function(msg) {
+    panel.betBtn.classList.add('state-disabled');
+    const prev = panel.betBtn.querySelector('.bb-top').textContent;
+    panel.betBtn.querySelector('.bb-top').textContent = msg || 'FUNDS?';
+    setTimeout(()=>{ panel.betBtn.querySelector('.bb-top').textContent = prev; syncButton(); }, 1200);
+  };
+  panel._syncBtn = syncButton;
+  panel._betPending = false;
+  panel._betConfirmed = false;
+  panel._promotingFromQueue = false;
+
+  function cashOut(p){
+    if (p._betPending || !p.placed || !p._betConfirmed || p.cashedOut) return;
+    sound.cashOut(); p.cashedOut = true;
+    p.lastPayout = Math.floor(p.amount * game.multiplier);
+    
+    // Won Animation
+    p.betBtn.classList.remove('anim-won', 'anim-lost');
+    void p.betBtn.offsetWidth;
+    p.betBtn.classList.add('anim-won');
+    spawnFloatingText(p.betBtn, '+' + fmt(p.lastPayout), 'floating-win');
+
+    if (_embedded) {
+      // Request credit from React parent
+      window.parent.postMessage({
+        type: 'AVIATOR_CASHOUT',
+        betAmount: p.amount,
+        multiplier: game.multiplier,
+        payout: p.lastPayout,
+        panelIndex: panels.indexOf(p)
+      }, '*');
+    } else {
+      game.balance += p.lastPayout;
+    }
+    renderBalance(); syncButton();
+  }
+
+  function syncButton(){
+    const isLocked = panel.placed || panel.queued || panel._betPending;
+    panel.amountInput.disabled = isLocked;
+    if (panel.stepBtns) panel.stepBtns.forEach(b => b.disabled = isLocked);
+    if (panel.quickBtns) panel.quickBtns.forEach(b => b.disabled = isLocked);
+
+    const btn = panel.betBtn, top = btn.querySelector('.bb-top'), bot = btn.querySelector('.bb-bottom');
+    btn.className = 'bet-button';
+
+    if (panel._betPending && !panel._betConfirmed) {
+      btn.classList.add('state-disabled');
+      top.textContent = 'PLACING...';
+      bot.textContent = fmt(panel.amount);
+      return;
+    }
+
+    if (game.state === STATE.WAITING){
+      if (panel.placed && panel._betConfirmed){ btn.classList.add('state-queued'); top.textContent = 'CANCEL'; bot.textContent = fmt(panel.amount); }
+      else if (panel.queued){ btn.classList.add('state-queued'); top.textContent = 'CANCEL'; bot.textContent = fmt(panel.amount)+' (next)'; }
+      else { top.textContent = 'BET'; bot.textContent = fmt(panel.amount); }
+    } else if (game.state === STATE.FLYING){
+      if (panel.placed && panel._betConfirmed && !panel.cashedOut){ btn.classList.add('state-flying'); top.textContent = 'CASH OUT'; bot.textContent = fmt(panel.amount * game.multiplier); }
+      else if (panel.placed && panel.cashedOut){ btn.classList.add('state-cashed'); top.textContent = 'CASHED'; bot.textContent = '+'+fmt(panel.lastPayout); }
+      else if (panel.queued){ btn.classList.add('state-queued'); top.textContent = 'CANCEL'; bot.textContent = fmt(panel.amount)+' (next)'; }
+      else { top.textContent = 'BET'; bot.textContent = fmt(panel.amount)+' (next)'; }
+    } else {
+      if (panel.placed && panel._betConfirmed && !panel.cashedOut){ btn.classList.add('state-disabled'); top.textContent = 'CRASHED'; bot.textContent = '-'+fmt(panel.amount); }
+      else if (panel.placed && panel.cashedOut){ btn.classList.add('state-cashed'); top.textContent = 'CASHED'; bot.textContent = '+'+fmt(panel.lastPayout); }
+      else if (panel.queued){ btn.classList.add('state-queued'); top.textContent = 'CANCEL'; bot.textContent = fmt(panel.amount)+' (next)'; }
+      else { top.textContent = 'BET'; bot.textContent = fmt(panel.amount); }
+    }
+  }
+
+  panel.onWaitingStart = function(){
+    panel.cashedOut = false; panel.lastPayout = 0;
+    panel.betBtn.classList.remove('anim-won', 'anim-lost');
+
+    if (!panel.queued && !panel._betPending) {
+      panel.placed = false;
+      panel._betConfirmed = false;
+    }
+
+    const timeRemaining = game.waitDuration - (performance.now() - game.waitStart);
+    const safeToBet = timeRemaining > 800;
+
+    if (panel.queued && !panel._betPending) {
+      if (!safeToBet) {
+        syncButton();
+        return;
+      }
+      sendBetToServer(panel, true);
+    }
+    else if (panel.autoplay && !panel.placed && !panel.queued && !panel._betPending && safeToBet) tryPlaceBet(panel);
+    syncButton();
+  };
+  panel.onFlyingTick = function(){
+    if (panel.placed && panel._betConfirmed && !panel.cashedOut && panel.autoCashOutOn && game.multiplier >= panel.autoCashOutValue) cashOut(panel);
+    syncButton();
+  };
+  panel.onCrash = function(){ 
+    if (panel.placed && panel._betConfirmed && !panel.cashedOut) {
+      panel.placed = false;
+      panel._betConfirmed = false;
+      // Lost Animation
+      panel.betBtn.classList.remove('anim-won', 'anim-lost');
+      void panel.betBtn.offsetWidth;
+      panel.betBtn.classList.add('anim-lost');
+      spawnFloatingText(panel.betBtn, '-' + fmt(panel.amount), 'floating-loss');
+    }
+    syncButton(); 
+  };
+  panel.onRoundFullyDone = function(){ panel.placed = false; panel._betConfirmed = false; panel._betPending = false; syncButton(); };
+
+  syncButton(); return panel;
+}
+
+const panels = [createPanel('panel1', game.minBet), createPanel('panel2', Math.max(game.minBet, 50))];
+
+fetch(`${_serverUrl}/api/aviator/limits`)
+  .then(r => r.json())
+  .then(data => { if (data.success) applyBetLimits(data.minBet, data.maxBet); })
+  .catch(e => console.error('Failed to fetch aviator limits', e));
+
+function startWaiting(){
+  game.multiplier = 1;
+  lastCountdownSec = null; multiplierTextEl.textContent = '1.00x'; multiplierTextEl.classList.remove('crashed');
+  
+  multiplierTextEl.style.display = 'none'; planeContainer.visible = false;
+  
+  statusTextEl.textContent = 'WAITING FOR ROUND'; countdownRing.style.display = 'block';
+  curveLayer.clear(); boomLayer.clear();
+  game.adaptiveDuration = 9750; game.adaptiveDurationTarget = 9750;
+  takeoffBobOffset = 0; nearWingGraphics.scale.y = 1; farWingGraphics.scale.y = 1;
+  
+  sound.startEngine(); panels.forEach(p=>p.onWaitingStart());
+}
+
+function startFlying(){
+  countdownRing.style.display = 'none'; statusTextEl.textContent = '';
+  multiplierTextEl.style.display = 'block'; planeContainer.visible = true;
+  sound.takeoff();
+}
+
+function triggerCrash(){
+  game.multiplier = game.crashPoint;
+  crashAnimTime = performance.now();
+  sound.stopEngine(); sound.flewAway();
+  
+  crashStartX = planeContainer.x; crashStartY = planeContainer.y; crashStartRotation = planeContainer.rotation;
+  multiplierTextEl.textContent = fmt(game.crashPoint) + 'x'; multiplierTextEl.classList.add('crashed');
+  statusTextEl.textContent = 'FLEW AWAY!';
+  panels.forEach(p=>p.onCrash());
+  setTimeout(()=>{ panels.forEach(p=>p.onRoundFullyDone()); }, 2200);
+}
+
+let lastMultText = '', lastCountdownSec = null, idleBobPhase = 0, propSpinPhase = 0, crashAnimTime = 0, centerPropSpin = 0, crashStartX = 0, crashStartY = 0, crashStartRotation = 0;
+let lastFrameTime = performance.now(); let takeoffBobOffset = 0;
+
+app.ticker.add(()=>{
+  const now = performance.now(); 
+  // Physics cap to strictly prevent extreme leaps/jitter on lag spikes
+  const dt = Math.min(Math.max(1, now - lastFrameTime), 33); 
+  lastFrameTime = now;
+  
+  const b = getBounds();
+  planeContainer.scale.set(b.scale); // Hard lock scale every frame
+
+  if (game.state === STATE.WAITING){
+    const remaining = Math.max(0, game.waitDuration - (now - game.waitStart));
+    const frac = remaining / game.waitDuration; const revFrac = 1 - frac;
+    const remainingSec = Math.ceil(remaining/1000);
+
+    countdownNum.textContent = remainingSec;
+    centerPropSpin += dt * (0.15 + revFrac * 3.5);
+    propTimer.style.transform = `rotate(${centerPropSpin}deg)`;
+
+    if (remainingSec !== lastCountdownSec){ lastCountdownSec = remainingSec; if (remainingSec > 0) sound.tick(); }
+    statusTextEl.textContent = 'WAITING FOR ROUND' + '.'.repeat(1 + Math.floor(now/400) % 3);
+
+    idleBobPhase += dt * 0.005;
+    const angle = Math.sin(idleBobPhase * 0.5) * 0.05;
+    takeoffBobOffset = -5 * b.scale + Math.sin(idleBobPhase) * 5 * b.scale;
+    
+    // Exact alignment to exhaust origin
+    const exhaustOffsetX = -38 * b.scale;
+    const exhaustOffsetY = -1 * b.scale;
+    const offsetX = - (Math.cos(angle) * exhaustOffsetX - Math.sin(angle) * exhaustOffsetY);
+    const offsetY = - (Math.sin(angle) * exhaustOffsetX + Math.cos(angle) * exhaustOffsetY);
+    
+    planeContainer.position.set(b.originX + offsetX, b.originY + offsetY + takeoffBobOffset);
+    planeContainer.rotation = angle;
+    
+    // Wing banking
+    const bankOffset = Math.sin(idleBobPhase * 2.5);
+    nearWingGraphics.scale.y = 1 + bankOffset * 0.2; farWingGraphics.scale.y = 1 - bankOffset * 0.2;
+    
+    propSpinPhase += (0.02 + revFrac * 0.05) * dt; updatePropeller(propSpinPhase, false);
+    
+    exhaustGraphics.clear();
+    exhaustGraphics.beginFill(0xf59e0b, 0.4 + Math.random()*0.3);
+    exhaustGraphics.drawCircle(0, 0, 2 + Math.random()*2); exhaustGraphics.endFill();
+
+    sound.setEngineLevel(60 + revFrac*45, 400 + revFrac*550, 0.18 + revFrac*0.24);
+    
+    curveLayer.clear();
+    const groundY = b.originY + 16 * b.scale;
+    curveLayer.lineStyle({ width: 2, color: 0x2a2f5a, alpha: 0.8 });
+    curveLayer.moveTo(0, groundY); curveLayer.lineTo(b.w, groundY); curveLayer.lineStyle({ width: 0 });
+
+    drawGrid(0); drawSpeedLines(dt, false, 1);
+  } 
+  else if (game.state === STATE.FLYING){
+    takeoffBobOffset *= 0.95; // Transition jump height smoothly
+    const elapsed = now - game.flyStart;
+    game.multiplier = computeMultiplier(elapsed);
+    
+    if (nearWingGraphics.scale.y !== 1) {
+      nearWingGraphics.scale.y += (1 - nearWingGraphics.scale.y) * 0.1;
+      farWingGraphics.scale.y += (1 - farWingGraphics.scale.y) * 0.1;
+    }
+    
+    if (game.state === STATE.FLYING) {
+      const t = fmt(game.multiplier) + 'x';
+      if (t !== lastMultText){ multiplierTextEl.textContent = t; lastMultText = t; }
+      
+      const speedParam = elapsed * 0.27;
+      drawGrid(speedParam); drawSpeedLines(dt, true, game.multiplier);
+      renderCurve(elapsed, speedParam);
+      
+      propSpinPhase += 0.2 * dt; updatePropeller(propSpinPhase, true);
+      
+      // Extreme Animation: Takeoff Shockwave Ground Blast
+      if (elapsed < 800) {
+        const sp = elapsed / 800;
+        const easeOut = 1 - Math.pow(1 - sp, 3);
+        const groundY = b.originY + 16 * b.scale;
+        boomLayer.clear();
+        boomLayer.lineStyle({ width: 6 * (1-sp), color: 0xffffff, alpha: 0.8 * (1-sp) });
+        boomLayer.drawEllipse(b.originX, groundY, easeOut * 120 * b.scale, easeOut * 25 * b.scale);
+        boomLayer.lineStyle({ width: 0 });
+      } else if (elapsed >= 800 && elapsed < 850) {
+        boomLayer.clear(); 
+      }
+
+      // Extreme Animation: Throbbing Multi-Layer Plasma Exhaust & Contrails
+      exhaustGraphics.clear();
+      
+      // High-Speed Wingtip Vapor Trails (Contrails)
+      if (game.multiplier > 1.5) {
+        const vaporAlpha = Math.min(0.6, (game.multiplier - 1.5) * 0.1) * (0.8 + Math.random()*0.2);
+        const vaporLen = 40 + Math.min(100, game.multiplier * 15) + Math.random()*20;
+        
+        exhaustGraphics.lineStyle({ width: 2, color: 0xffffff, alpha: vaporAlpha });
+        exhaustGraphics.moveTo(32, -16); exhaustGraphics.lineTo(32 - vaporLen, -16); // Far wing
+        exhaustGraphics.moveTo(16, 28); exhaustGraphics.lineTo(16 - vaporLen*1.2, 28); // Near wing
+        exhaustGraphics.lineStyle({ width: 0 });
+      }
+
+      // Supersonic Vapor Cone (Mach Cone)
+      if (game.multiplier > 3.0) {
+        const coneAlpha = Math.min(0.25, (game.multiplier - 3.0) * 0.05) * (0.9 + Math.random()*0.1);
+        exhaustGraphics.beginFill(0xffffff, coneAlpha);
+        exhaustGraphics.moveTo(70, 0); // Cone tip in front of nose
+        exhaustGraphics.lineTo(10, -50); // Top spread
+        exhaustGraphics.quadraticCurveTo(5, 0, 10, 50); // Bottom curve
+        exhaustGraphics.endFill();
+      }
+
+      const baseExLen = (35 + Math.random()*15) * Math.min(2.0, game.multiplier*0.6);
+      const throb = Math.sin(now * 0.05) * 10; 
+      const exLen = Math.max(10, baseExLen + throb);
+      
+      // Main Plasma Flames
+      exhaustGraphics.beginFill(0xef4444, 0.5 + Math.random()*0.2); // Outer Red
+      exhaustGraphics.moveTo(0, -6); exhaustGraphics.lineTo(-exLen, 0); exhaustGraphics.lineTo(0, 6); exhaustGraphics.endFill();
+      exhaustGraphics.beginFill(0xf59e0b, 0.7); // Mid Orange
+      exhaustGraphics.moveTo(0, -4); exhaustGraphics.lineTo(-exLen*0.8, 0); exhaustGraphics.lineTo(0, 4); exhaustGraphics.endFill();
+      exhaustGraphics.beginFill(0xffffff, 0.9 + Math.random()*0.1); // Inner Hot White
+      exhaustGraphics.moveTo(0, -2); exhaustGraphics.lineTo(-exLen*0.5, 0); exhaustGraphics.lineTo(0, 2); exhaustGraphics.endFill();
+      
+      // Jet Shock Diamonds
+      const numDiamonds = Math.min(5, Math.floor(game.multiplier * 1.5));
+      for (let i = 0; i < numDiamonds; i++) {
+        const dX = -5 - (i * 12);
+        const dScale = 1 - (i * 0.15);
+        if (dScale <= 0) break;
+        exhaustGraphics.beginFill(0xffffff, 0.7 - (i*0.1));
+        exhaustGraphics.moveTo(dX, 0);
+        exhaustGraphics.lineTo(dX - 6*dScale, -3*dScale);
+        exhaustGraphics.lineTo(dX - 12*dScale, 0);
+        exhaustGraphics.lineTo(dX - 6*dScale, 3*dScale);
+        exhaustGraphics.endFill();
+      }
+
+      // Dynamic Exhaust Sparks
+      for(let i=0; i<4; i++) {
+          exhaustGraphics.beginFill(0xffffff, Math.random());
+          exhaustGraphics.drawCircle(-(Math.random()*0.8 + 0.2)*exLen, (Math.random()-0.5)*12, Math.random()*2.5);
+          exhaustGraphics.endFill();
+      }
+
+      const m = Math.min(game.multiplier, 25);
+      sound.setEngineLevel(90 + m*10, 900 + m*70, Math.min(1, 0.5 + game.multiplier*0.015));
+      panels.forEach(p=>p.onFlyingTick());
+    }
+  }
+  else if (game.state === STATE.CRASHED) {
+    const p = Math.min(1, (now - crashAnimTime) / 700);
+    const easeIn = p * p * p;
+    
+    // Escape Sequence
+    planeContainer.position.x = crashStartX + (b.w - crashStartX + 300) * easeIn;
+    planeContainer.position.y = crashStartY - (crashStartY + 300) * easeIn;
+    planeContainer.rotation = crashStartRotation - (easeIn * 0.5);
+    planeContainer.scale.set(b.scale * Math.max(0, 1 - easeIn * 0.8));
+    
+    propSpinPhase += 0.3 * dt; updatePropeller(propSpinPhase, true);
+    
+    exhaustGraphics.clear();
+    if (p < 0.9) {
+      const exLen = (40 + Math.random()*30) * (1 + easeIn * 3);
+      exhaustGraphics.beginFill(0xf59e0b, 1 - p);
+      exhaustGraphics.moveTo(0, -6); exhaustGraphics.lineTo(-exLen, 0); exhaustGraphics.lineTo(0, 6); exhaustGraphics.endFill();
+    }
+    
+    // Extreme Animation: Sonic Boom Crash Rings
+    boomLayer.clear();
+    if (p > 0 && p < 1) {
+      boomLayer.lineStyle({ width: 15 * (1-p), color: 0xff5500, alpha: 1 - p });
+      boomLayer.drawCircle(crashStartX, crashStartY, p * 800);
+      boomLayer.lineStyle({ width: 5 * (1-p), color: 0xffdd00, alpha: 1 - p });
+      boomLayer.drawCircle(crashStartX, crashStartY, p * 850);
+      boomLayer.lineStyle({ width: 0 });
+    }
+    
+    drawGrid(0); drawSpeedLines(dt, false, 1);
+  }
+});
+
+renderBalance(); startWaiting();
+window.addEventListener('resize', ()=> { if(game.state === STATE.WAITING) { curveLayer.clear(); boomLayer.clear(); drawGrid(0); } });
+
+})();
+function createParticles() {
+  const c = document.getElementById('gameStage');
+  for(let i=0; i<15; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-particle';
+    p.style.left = Math.random()*100 + '%';
+    p.style.top = Math.random()*100 + '%';
+    p.style.animationDuration = (Math.random()*6 + 4) + 's';
+    p.style.animationDelay = (Math.random()*5) + 's';
+    c.appendChild(p);
+  }
+}
+createParticles();
+</script>
+</body>
+</html>
