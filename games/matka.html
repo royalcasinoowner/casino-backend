@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matka - Multiplayer Poker Betting</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #090813;
+            --bg-panel: rgba(20, 17, 36, 0.7);
+            --border-purple: rgba(139, 92, 246, 0.25);
+            --border-purple-glow: rgba(139, 92, 246, 0.6);
+            --text-main: #f3f1f7;
+            --text-dim: #a19bb8;
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.6);
+            --neon-purple: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.95) 0px, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-purple);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.15);
+        }
+
+        /* 3D Poker Cards Styling - Optimized for Mobile */
+        .card-container {
+            perspective: 1000px;
+            width: 82px;
+            height: 125px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        @media (min-width: 480px) {
+            .card-container {
+                width: 95px;
+                height: 142px;
+            }
+        }
+
+        @media (min-width: 640px) {
+            .card-container {
+                width: 115px;
+                height: 172px;
+            }
+        }
+
+        .card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            transform-style: preserve-3d;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-container:hover .card-inner {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 12px 25px rgba(139, 92, 246, 0.25);
+        }
+
+        /* Flipped state (Show back of card) */
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Selected State */
+        .card-container.selected .card-inner {
+            transform: translateY(-8px) scale(1.04);
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 20px var(--gold-glow);
+        }
+
+        /* Winning Card State */
+        .card-container.winner-card .card-inner {
+            animation: pulse-win 1.5s infinite alternate;
+            border: 3px solid #10b981;
+        }
+
+        @keyframes pulse-win {
+            0% {
+                box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+                transform: scale(1.04) translateY(-6px);
+            }
+            100% {
+                box-shadow: 0 0 30px rgba(16, 185, 129, 1);
+                transform: scale(1.08) translateY(-12px);
+            }
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        /* Front of card */
+        .card-front {
+            background: #ffffff;
+            color: #1e1b4b;
+        }
+
+        /* Back of card */
+        .card-back {
+            background: linear-gradient(135deg, #2e1065 0%, #0f052d 100%);
+            color: var(--gold);
+            transform: rotateY(180deg);
+            border: 2px solid var(--border-purple-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-back-pattern {
+            width: 85%;
+            height: 85%;
+            border: 1px dashed rgba(251, 191, 36, 0.25);
+            border-radius: 6px;
+            background-image: radial-gradient(var(--border-purple-glow) 1px, transparent 0);
+            background-size: 6px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+        }
+
+        /* Suit-specific style helper classes */
+        .suit-large {
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+
+        @media (min-width: 640px) {
+            .suit-large {
+                font-size: 3rem;
+            }
+        }
+
+        /* Premium 3D Card Shuffling Animation */
+        .shuffling-animation {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        .shuffling-animation:nth-child(2n) {
+            animation: matka-shuffle-even 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .shuffling-animation:nth-child(2n+1) {
+            animation: matka-shuffle-odd 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* Staggered animation delays for cascading ripple effect */
+        .shuffling-animation:nth-child(3n) {
+            animation-delay: 0.15s;
+        }
+
+        .shuffling-animation:nth-child(3n+1) {
+            animation-delay: 0.3s;
+        }
+
+        .shuffling-animation:nth-child(3n+2) {
+            animation-delay: 0.45s;
+        }
+
+        @keyframes matka-shuffle-even {
+            0% {
+                transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+                z-index: 10;
+            }
+            25% {
+                transform: translate3d(45px, -15px, -80px) rotate(12deg) scale(0.9);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3);
+                z-index: 1;
+            }
+            50% {
+                transform: translate3d(0, 0, 60px) rotateY(180deg) scale(1.05);
+                box-shadow: 0 25px 50px rgba(251, 191, 36, 0.4);
+                z-index: 20;
+            }
+            75% {
+                transform: translate3d(-45px, 15px, -80px) rotate(-12deg) scale(0.9);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3);
+                z-index: 1;
+            }
+            100% {
+                transform: translate3d(0, 0, 0) rotateY(360deg) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+                z-index: 10;
+            }
+        }
+
+        @keyframes matka-shuffle-odd {
+            0% {
+                transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+                z-index: 5;
+            }
+            25% {
+                transform: translate3d(-45px, 15px, -80px) rotate(-12deg) scale(0.9);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3);
+                z-index: 1;
+            }
+            50% {
+                transform: translate3d(0, 0, 60px) rotateY(-180deg) scale(1.05);
+                box-shadow: 0 25px 50px rgba(251, 191, 36, 0.4);
+                z-index: 20;
+            }
+            75% {
+                transform: translate3d(45px, -15px, -80px) rotate(12deg) scale(0.9);
+                box-shadow: 0 15px 30px rgba(139, 92, 246, 0.3);
+                z-index: 1;
+            }
+            100% {
+                transform: translate3d(0, 0, 0) rotateY(-360deg) scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+                z-index: 5;
+            }
+        }
+
+        /* Glowing text & details */
+        .glow-text-gold { text-shadow: 0 0 8px var(--gold-glow); }
+        .glow-text-purple { text-shadow: 0 0 8px rgba(139, 92, 246, 0.6); }
+
+        /* Chips select buttons */
+        .chip-btn {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px dashed white;
+            font-weight: 800;
+            font-size: 0.8rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .chip-btn::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+        }
+
+        .chip-btn:hover {
+            transform: scale(1.15) rotate(15deg);
+        }
+
+        .chip-10 { background: #ef4444; border-color: #b91c1c; color: white; }
+        .chip-50 { background: #3b82f6; border-color: #1d4ed8; color: white; }
+        .chip-100 { background: #10b981; border-color: #047857; color: white; }
+        .chip-500 { background: #eab308; border-color: #a16207; color: black; }
+        .chip-1k { background: #8b5cf6; border-color: #6d28d9; color: white; }
+        .chip-5k { background: #ec4899; border-color: #be185d; color: white; }
+
+        .chip-btn.selected-chip {
+            border-color: #ffffff;
+            box-shadow: 0 0 0 4px var(--gold);
+            transform: scale(1.1) translateY(-4px);
+        }
+
+        /* Progress circular loader styling */
+        .timer-circle {
+            position: relative;
+            width: 65px;
+            height: 65px;
+        }
+
+        .timer-svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 6;
+        }
+
+        .timer-progress {
+            fill: none;
+            stroke: var(--neon-purple);
+            stroke-width: 6;
+            stroke-dasharray: 220;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+            stroke-linecap: round;
+        }
+
+        /* Balance ticker transition */
+        #user-balance { transition: all 0.3s; }
+
+        .balance-gain {
+            color: #10b981;
+            animation: flash-green 1s;
+        }
+
+        .balance-loss {
+            color: #ef4444;
+            animation: flash-red 1s;
+        }
+
+        @keyframes flash-green {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 10px rgba(16,185,129, 0.5)); }
+        }
+        @keyframes flash-red {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 10px rgba(239,68,68, 0.5)); }
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-6 md:p-8">
+
+    <!-- Auth / Username Join Modal (If no user set) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md">
+        <div class="glass-panel p-8 sm:p-12 max-w-md w-full mx-4 border-2 border-purple-500/40 text-center relative overflow-hidden">
+            <!-- Decorative Glow background -->
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-purple-600/30 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-pink-500/20 rounded-full blur-3xl"></div>
+
+            <div class="mb-6">
+                <i class="fa-solid fa-spade text-6xl text-purple-500 mb-2 glow-text-purple"></i>
+                <h1 class="text-4xl font-extrabold tracking-tighter glow-text-purple">MATKA POKER</h1>
+                <p class="text-xs text-purple-400 font-semibold tracking-wider mt-1 uppercase" id="tr-modal-subtitle">Multiplayer Card Arena</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="text-left">
+                    <label class="text-xs font-semibold uppercase text-slate-400 mb-1 block" id="tr-lbl-gladiator-name">Your Gladiator Name</label>
+                    <input type="text" id="username-input" placeholder="e.g. CardKing" maxlength="15"
+                        class="w-full bg-[#120f24] border border-[#2e2954] rounded-lg px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-semibold">
+                </div>
+                
+                <button id="join-btn"
+                    class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold py-4 rounded-lg shadow-lg hover:shadow-purple-500/25 transition-all text-white tracking-wide uppercase" id="tr-btn-enter-arena">
+                    Enter Arena
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Workspace -->
+    <div id="game-workspace" class="hidden max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header Panel -->
+        <div class="glass-panel px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Left: Brand / Title -->
+            <div class="flex items-center gap-3">
+                <div class="bg-purple-600/30 w-10 h-10 rounded-lg flex items-center justify-center border border-purple-500/50">
+                    <i class="fa-solid fa-spade text-xl text-purple-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight flex items-center gap-2">
+                        MATKA <span class="bg-purple-600/20 text-purple-400 text-[10px] px-2 py-0.5 rounded-full border border-purple-500/30 uppercase font-extrabold tracking-widest">Poker</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold" id="tr-brand-desc">Provably Fair Multiplayer</p>
+                </div>
+            </div>
+
+            <!-- Middle: Round Status Message & Timer -->
+            <div class="flex items-center gap-4 bg-black/30 px-6 py-2 rounded-full border border-[#231b40]">
+                <!-- Phase Message Indicator -->
+                <div class="text-right min-w-[150px]">
+                    <div id="phase-status-text" class="text-xs uppercase tracking-widest font-extrabold text-purple-400">CONNECTING...</div>
+                    <div id="phase-subtext" class="text-[10px] text-slate-500">Syncing arena state</div>
+                </div>
+                <!-- Countdown Circle Timer -->
+                <div class="timer-circle">
+                    <svg class="timer-svg" viewBox="0 0 80 80">
+                        <circle class="timer-bg" cx="40" cy="40" r="35" />
+                        <circle id="timer-indicator" class="timer-progress" cx="40" cy="40" r="35" />
+                    </svg>
+                    <div id="timer-text" class="absolute inset-0 flex items-center justify-center font-black text-lg text-white">0</div>
+                </div>
+            </div>
+
+            <!-- Right: Balance, Active User Profile & Portal Link -->
+            <div class="flex items-center gap-4 flex-wrap justify-center">
+                <!-- Global Language Dropdown -->
+                <div class="relative">
+                    <select id="lang-header-select" onchange="changeHeaderLanguage(this.value)" 
+                        class="bg-[#17142b] border border-purple-500/20 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none focus:border-purple-500 cursor-pointer">
+                        <option value="en">🌐 EN</option>
+                        <option value="hi">🌐 HI</option>
+                        <option value="mr">🌐 MR</option>
+                        <option value="kn">🌐 KN</option>
+                        <option value="ml">🌐 ML</option>
+                    </select>
+                </div>
+
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-400 uppercase font-semibold" id="tr-lbl-wallet">My Balance</div>
+                    <div class="text-xl font-black text-amber-400 flex items-center gap-1.5 justify-end">
+                        <span id="user-balance">10,000</span>
+                        <i class="fa-solid fa-coins text-sm text-amber-500"></i>
+                    </div>
+                </div>
+                <div id="user-profile-badge" class="flex items-center gap-2 bg-[#17142b] border border-purple-500/20 px-3 py-1.5 rounded-lg">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=G&background=8b5cf6&color=fff" class="w-8 h-8 rounded-md border border-purple-500/40">
+                    <span id="user-name-display" class="font-bold text-sm text-slate-200">Guest</span>
+                </div>
+                <a href="/" class="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors" title="Exit to Lobby">
+                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Cards Grid & Betting Controls -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- LEFT 2 COLUMNS: Picked Cards Grid -->
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="glass-panel p-6 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-bold tracking-tight text-purple-300 uppercase flex items-center gap-2">
+                                <i class="fa-solid fa-cards text-purple-400"></i> <span id="tr-card-board">Card Board</span>
+                            </h2>
+                            <span class="text-xs bg-[#191530] text-[#a594f9] border border-[#2b2553] px-3 py-1 rounded-full font-bold" id="tr-cards-dealt">11 Cards Selected</span>
+                        </div>
+
+                        <!-- 11 Cards Display Grid -->
+                        <div id="cards-board" class="flex flex-wrap gap-3 sm:gap-4 justify-center py-4">
+                            <!-- Dynamically Generated 11 Cards -->
+                            <div class="text-slate-500 text-sm text-center italic py-12">Dealing cards...</div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom explanation -->
+                    <div class="mt-4 pt-4 border-t border-purple-500/10 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+                        <span id="tr-card-info-footer"><i class="fa-solid fa-circle-info text-purple-400/70 mr-1"></i> Click card to select. Place your bet using the dashboard.</span>
+                        <span class="text-amber-500 font-bold uppercase tracking-wider" id="tr-win-calc-footer"><i class="fa-solid fa-bolt mr-1"></i> Correct Guess Pays +250% Profit (3.5x payout)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT 1 COLUMN: Betting & Control Panel -->
+            <div class="space-y-6">
+                <!-- Betting Operations Glass Panel -->
+                <div class="glass-panel p-6 space-y-6">
+                    <h2 class="text-lg font-bold tracking-tight text-purple-300 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-dice text-purple-400"></i> <span id="tr-place-bet-title">Place Bet</span>
+                    </h2>
+
+                    <!-- Chosen Card Preview -->
+                    <div id="chosen-card-display" class="bg-[#100c22] border border-[#231a44] p-4 rounded-xl flex items-center gap-4">
+                        <div id="chosen-card-placeholder" class="w-12 h-16 border-2 border-dashed border-purple-500/30 rounded-lg flex items-center justify-center text-purple-500/40 text-xs">
+                            <i class="fa-solid fa-plus text-lg"></i>
+                        </div>
+                        <div id="chosen-card-details" class="flex-1">
+                            <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider" id="tr-selection-lbl">Your Selection</div>
+                            <div id="chosen-card-title" class="text-lg font-black text-slate-400">NO CARD SELECTED</div>
+                            <div id="chosen-card-suit" class="text-xs text-slate-500">Pick one from the board</div>
+                        </div>
+                    </div>
+
+                    <!-- Bet input controller -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
+                            <span id="tr-bet-amount-lbl">BET AMOUNT</span>
+                            <span id="max-bet-limit" class="opacity-50">MIN: 10</span>
+                        </div>
+                        <div class="relative bg-black/40 border border-purple-500/20 rounded-xl px-4 py-3 flex items-center">
+                            <input type="number" id="bet-amount" value="100" min="10" step="10"
+                                class="w-full bg-transparent border-none text-white font-extrabold text-xl outline-none focus:ring-0">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-coins text-amber-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chips Selector Row -->
+                    <div class="space-y-2">
+                        <div class="text-[10px] font-extrabold uppercase text-slate-500 tracking-widest" id="tr-quick-chip-lbl">Quick Chip Addition</div>
+                        <div class="flex flex-wrap gap-2 justify-center py-1 bg-black/20 rounded-xl p-2 border border-purple-500/5">
+                            <button class="chip-btn chip-10 selected-chip" data-chip="10">10</button>
+                            <button class="chip-btn chip-50" data-chip="50">50</button>
+                            <button class="chip-btn chip-100" data-chip="100">100</button>
+                            <button class="chip-btn chip-500" data-chip="500">500</button>
+                            <button class="chip-btn chip-1k" data-chip="1000">1K</button>
+                            <button class="chip-btn chip-5k" data-chip="5000">5K</button>
+                        </div>
+                    </div>
+
+                    <!-- Bet Modifiers -->
+                    <div class="grid grid-cols-5 gap-1.5">
+                        <button class="btn-modifier bg-[#191530] hover:bg-[#252046] text-purple-400 border border-[#2b2553] text-[10px] font-bold py-2 rounded-lg transition-all uppercase" data-op="min">Min</button>
+                        <button class="btn-modifier bg-[#191530] hover:bg-[#252046] text-purple-400 border border-[#2b2553] text-[10px] font-bold py-2 rounded-lg transition-all uppercase" data-op="half">1/2</button>
+                        <button class="btn-modifier bg-[#191530] hover:bg-[#252046] text-purple-400 border border-[#2b2553] text-[10px] font-bold py-2 rounded-lg transition-all uppercase" data-op="double">x2</button>
+                        <button class="btn-modifier bg-[#191530] hover:bg-[#252046] text-purple-400 border border-[#2b2553] text-[10px] font-bold py-2 rounded-lg transition-all uppercase" data-op="max">Max</button>
+                        <button class="btn-modifier bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/30 text-[10px] font-bold py-2 rounded-lg transition-all uppercase" data-op="clear"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+
+                    <!-- PLACE BET BUTTON -->
+                    <button id="place-bet-btn" disabled
+                        class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black py-4 rounded-xl shadow-lg hover:shadow-amber-500/20 transition-all uppercase tracking-wider text-base disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check"></i> <span id="tr-btn-choose-bet">Choose Card & Bet</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Lower Section: Active Players Grid & History & Provably Fair -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Lobby Active Players -->
+            <div class="glass-panel p-6 flex flex-col h-[320px]">
+                <h2 class="text-sm font-extrabold text-purple-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-purple-400"></i> <span id="tr-lobby-title">Arena Lobby</span> (<span id="active-players-count">0</span>)
+                </h2>
+                <div id="lobby-players-list" class="space-y-3 overflow-y-auto flex-1 pr-1">
+                    <!-- Player Item template -->
+                    <div class="text-slate-500 text-xs italic text-center py-10" id="tr-lobby-empty-placeholder">Lobby is empty</div>
+                </div>
+            </div>
+
+            <!-- Game History winning cards list -->
+            <div class="glass-panel p-6 flex flex-col h-[320px]">
+                <h2 class="text-sm font-extrabold text-purple-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-purple-400"></i> <span id="tr-wins-history-title">Winning History</span>
+                </h2>
+                <div class="flex flex-wrap gap-2.5 overflow-y-auto flex-1 pr-1 content-start" id="history-container">
+                    <!-- Historical items generated dynamically -->
+                    <div class="text-slate-500 text-xs italic text-center w-full py-10" id="tr-wins-empty-placeholder">No history available</div>
+                </div>
+            </div>
+
+            <!-- Provably Fair Panel -->
+            <div class="glass-panel p-6 flex flex-col h-[320px] justify-between">
+                <div>
+                    <h2 class="text-sm font-extrabold text-purple-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-purple-400"></i> <span id="tr-provably-title">Provably Fair Audit</span>
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase block tracking-wider mb-1" id="tr-hash-lbl">Round SHA-256 Hash</span>
+                            <div id="provably-hash" class="bg-black/45 border border-purple-500/10 px-3 py-2 rounded-lg text-[10px] font-mono text-purple-400 break-all select-all leading-relaxed">
+                                ...
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase block tracking-wider mb-1" id="tr-salt-lbl">Salt (Revealed on Round End)</span>
+                            <div id="provably-salt" class="bg-black/45 border border-purple-500/10 px-3 py-2 rounded-lg text-[10px] font-mono text-slate-400 break-all select-all">
+                                Hidden until result phase
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-950/20 border border-purple-500/10 rounded-xl p-3 text-[10px] text-slate-400 flex items-start gap-2 leading-relaxed">
+                    <i class="fa-solid fa-circle-question text-[#8b5cf6] text-xs mt-0.5"></i>
+                    <div id="tr-provably-desc">
+                        The SHA-256 hash is generated by hashing the Winning Card + Salt string. This guarantees that the server selected the winning card BEFORE players placed their bets!
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <!-- Modal for Result details -->
+    <div id="result-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 hidden backdrop-blur-md">
+        <div class="glass-panel p-8 sm:p-12 max-w-md w-full mx-4 text-center border-2 border-[#372b64] shadow-2xl relative overflow-hidden">
+            <!-- Decorative Glow background -->
+            <div id="modal-decor-glow" class="absolute -top-12 -left-12 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl"></div>
+            
+            <div id="modal-badge-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center bg-[#181235] border-2 border-purple-500 mb-6 text-4xl shadow-lg">
+                🏆
+            </div>
+
+            <h2 id="modal-result-title" class="text-4xl font-extrabold tracking-tighter uppercase mb-2">WINNER!</h2>
+            <p id="modal-result-subtext" class="text-xs text-slate-400 tracking-wider mb-6">Matka Poker Round Result</p>
+            
+            <!-- Result Card Panel -->
+            <div class="flex justify-center mb-6">
+                <div id="winning-card-slot" class="w-32 h-48 bg-white text-slate-900 border-4 border-amber-400 shadow-2xl rounded-2xl flex flex-col justify-between p-4 box-sizing select-none">
+                    <!-- Left Corner -->
+                    <div class="text-left font-black text-xl leading-none">
+                        <div id="slot-rank-top">A</div>
+                        <div id="slot-suit-top">♥</div>
+                    </div>
+                    <!-- Large Center Suit -->
+                    <div id="slot-suit-center" class="text-center text-6xl leading-none">♥</div>
+                    <!-- Right Corner -->
+                    <div class="text-right font-black text-xl leading-none select-none">
+                        <div id="slot-rank-bottom">A</div>
+                        <div id="slot-suit-bottom">♥</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-earnings-box" class="bg-[#120f26] border border-[#2e2659] py-3.5 px-6 rounded-xl mb-6">
+                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider" id="tr-modal-earnings-lbl">Your Earnings</div>
+                <div id="modal-earnings-amount" class="text-2xl font-black text-emerald-400 mt-0.5">+5,250 COINS</div>
+            </div>
+
+            <button onclick="closeResultModal()" class="w-full bg-[#272149] hover:bg-[#342c62] border border-[#443a7f] text-slate-200 font-bold py-3.5 rounded-lg transition-colors uppercase tracking-wider text-xs" id="tr-modal-back-btn">
+                Back to Board
+            </button>
+        </div>
+    </div>
+
+    <!-- Socket.io Script -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Connect to Matka namespace
+        const socket = io('/matka');
+        
+        const PHASES = { CHOOSING: 'CHOOSING', SHUFFLING: 'SHUFFLING', RESULT: 'RESULT' };
+
+        const TRANSLATIONS = {
+            en: {
+                modalSubtitle: "Multiplayer Card Arena",
+                lblGladiatorName: "Your Gladiator Name",
+                btnEnterArena: "Enter Arena",
+                brandDesc: "Provably Fair Multiplayer",
+                lblWallet: "My Balance",
+                cardBoard: "Card Board",
+                cardsDealt: "11 Cards Selected",
+                cardInfoFooter: "Click card to select. Place your bet using the dashboard.",
+                winCalcFooter: "Correct Guess Pays +250% Profit (3.5x payout)",
+                placeBetTitle: "Place Bet",
+                selectionLbl: "Your Selection",
+                cardSelectionStatus: "Pick one from the board",
+                betAmountLbl: "BET AMOUNT",
+                quickChipLbl: "Quick Chip Addition",
+                btnChooseBet: "Choose Card & Bet",
+                lobbyTitle: "Arena Lobby",
+                winsHistoryTitle: "Winning History",
+                provablyTitle: "Provably Fair Audit",
+                hashLbl: "Round SHA-256 Hash",
+                saltLbl: "Salt (Revealed on Round End)",
+                saltVal: "Hidden until result phase",
+                provablyDesc: "The SHA-256 hash is generated by hashing the Winning Card + Salt string. This guarantees that the server selected the winning card BEFORE players placed their bets!",
+                modalEarningsLbl: "Your Earnings",
+                modalBackBtn: "Back to Board",
+                lobbyEmptyPlaceholder: "Lobby is empty",
+                winsEmptyPlaceholder: "No history available",
+                choosingPhase: "CHOOSING PHASE",
+                choosingDesc: "Choose a card and place your bet",
+                shufflingPhase: "SHUFFLING DECK",
+                shufflingDesc: "Cards are shuffling, drawing result...",
+                resultPhase: "ROUND RESOLVED",
+                resultDesc: "Checking win payouts",
+                noCardSelected: "NO CARD SELECTED",
+                pickOneFromBoard: "Pick one from the board",
+                payoutLocked: "BETTING LOCKED",
+                payoutPlaced: "BET LOCKED",
+                winResult: "🏆 WINNER!",
+                loseResult: "💀 LOST",
+                suitHearts: "Hearts",
+                suitDiamonds: "Diamonds",
+                suitClubs: "Clubs",
+                suitSpades: "Spades",
+                suitVibrant: "Vibrant"
+            },
+            hi: {
+                modalSubtitle: "मल्टीप्लेयर कार्ड अखाड़ा",
+                lblGladiatorName: "आपका ग्लेडिएटर नाम",
+                btnEnterArena: "अखाड़े में प्रवेश करें",
+                brandDesc: "प्रमाणित निष्पक्ष मल्टीप्लेयर",
+                lblWallet: "मेरा बैलेंस",
+                cardBoard: "कार्ड बोर्ड",
+                cardsDealt: "11 कार्ड चुने गए",
+                cardInfoFooter: "चुनने के लिए कार्ड पर क्लिक करें। डैशबोर्ड का उपयोग करके दांव लगाएं।",
+                winCalcFooter: "सही अनुमान पर +250% लाभ (3.5x भुगतान) मिलता है",
+                placeBetTitle: "दांव लगाएं",
+                selectionLbl: "आपका चयन",
+                cardSelectionStatus: "बोर्ड से एक चुनें",
+                betAmountLbl: "दांव राशि",
+                quickChipLbl: "त्वरित चिप जोड़",
+                btnChooseBet: "कार्ड चुनें और दांव लगाएं",
+                lobbyTitle: "अखाड़ा लॉबी",
+                winsHistoryTitle: "जीत का इतिहास",
+                provablyTitle: "निष्पक्ष ऑडिट",
+                hashLbl: "दौर का SHA-256 हैश",
+                saltLbl: "साल्ट (दौर के अंत में प्रकट)",
+                saltVal: "परिणाम चरण तक छिपा हुआ",
+                provablyDesc: "SHA-256 हैश को जीतने वाले कार्ड + साल्ट को हैश करके बनाया जाता है। यह गारंटी देता है कि सर्वर ने दांव लगाने से पहले कार्ड चुना था!",
+                modalEarningsLbl: "आपकी कमाई",
+                modalBackBtn: "बोर्ड पर वापस जाएं",
+                lobbyEmptyPlaceholder: "लॉबी खाली है",
+                winsEmptyPlaceholder: "कोई इतिहास उपलब्ध नहीं है",
+                choosingPhase: "चयन चरण",
+                choosingDesc: "एक कार्ड चुनें और दांव लगाएं",
+                shufflingPhase: "डेक शफल हो रहा है",
+                shufflingDesc: "कार्ड शफल हो रहे हैं, परिणाम आ रहा है...",
+                resultPhase: "दौर समाप्त हुआ",
+                resultDesc: "जीत के भुगतान की जांच की जा रही है",
+                noCardSelected: "कोई कार्ड नहीं चुना गया",
+                pickOneFromBoard: "बोर्ड से एक कार्ड चुनें",
+                payoutLocked: "सट्टेबाजी बंद है",
+                payoutPlaced: "दांव लॉक है",
+                winResult: "🏆 विजेता!",
+                loseResult: "💀 हार गए",
+                suitHearts: "हार्ट्स",
+                suitDiamonds: "डायमंड्स",
+                suitClubs: "क्लब्स",
+                suitSpades: "स्पेड्स",
+                suitVibrant: "वाइब्रेंट"
+            },
+            mr: {
+                modalSubtitle: "मल्टीप्लेयर पत्त्यांचा आखाडा",
+                lblGladiatorName: "तुमचे नाव",
+                btnEnterArena: "आखाड्यात प्रवेश करा",
+                brandDesc: "प्रमाणित निष्पक्ष मल्टीप्लेयर",
+                lblWallet: "माझे बॅलन्स",
+                cardBoard: "पत्ता बोर्ड",
+                cardsDealt: "11 पत्ते निवडले आहेत",
+                cardInfoFooter: "पत्ता निवडण्यासाठी क्लिक करा. डॅशबोर्ड वापरून पैज लावा.",
+                winCalcFooter: "योग्य अंदाजासाठी +२५०% नफा (३.५x पेआउट) मिळतो",
+                placeBetTitle: "पैज लावा",
+                selectionLbl: "तुमची निवड",
+                cardSelectionStatus: "बोर्डवरून एक पत्ता निवडा",
+                betAmountLbl: "पैज रक्कम",
+                quickChipLbl: "त्वरित चिप जोडा",
+                btnChooseBet: "पत्ता निवडा आणि पैज लावा",
+                lobbyTitle: "आखाडा लॉबी",
+                winsHistoryTitle: "विजय इतिहास",
+                provablyTitle: "निष्पक्ष ऑडिट",
+                hashLbl: "फेरीचा SHA-256 हॅश",
+                saltLbl: "साल्ट (फेरीच्या शेवटी उघड)",
+                saltVal: "फेरी संपेपर्यंत लपविलेले",
+                provablyDesc: "SHA-256 हॅश हा जिंकणारा पत्ता + साल्ट हॅश करून तयार केला जातो. हे सुनिश्चित करते की निकाल आधीच ठरवला होता!",
+                modalEarningsLbl: "तुमची कमाई",
+                modalBackBtn: "बोर्डवर परत जा",
+                lobbyEmptyPlaceholder: "लॉबी रिकामी आहे",
+                winsEmptyPlaceholder: "इतिहास उपलब्ध नाही",
+                choosingPhase: "निवड फेरी",
+                choosingDesc: "पत्ता निवडा आणि पैज लावा",
+                shufflingPhase: "पत्ते शफल होत आहेत",
+                shufflingDesc: "पत्ते शफल होत आहेत, निकाल येत आहे...",
+                resultPhase: "फेरी समाप्त झाली",
+                resultDesc: "विजेत्या पेआउटची तपासणी सुरू आहे",
+                noCardSelected: "पत्ता निवडलेला नाही",
+                pickOneFromBoard: "बोर्डवरून एक पत्ता निवडा",
+                payoutLocked: "पैज लावणे बंद आहे",
+                payoutPlaced: "पैज लॉक झाली",
+                winResult: "🏆 विजेता!",
+                loseResult: "💀 पराभूत",
+                suitHearts: "हार्ट्स",
+                suitDiamonds: "डायमंड्स",
+                suitClubs: "क्लब्स",
+                suitSpades: "स्पेड्स",
+                suitVibrant: "व्हायब्रंट"
+            },
+            kn: {
+                modalSubtitle: "ಮಲ್ಟಿಪ್ಲೇಯರ್ ಕಾರ್ಡ್ ಅಖಾಡ",
+                lblGladiatorName: "ನಿಮ್ಮ ಹೆಸರು",
+                btnEnterArena: "ಅಖಾಡ ಪ್ರವೇಶಿಸಿ",
+                brandDesc: "ನ್ಯಾಯೋಚಿತ ಮಲ್ಟಿಪ್ಲೇಯರ್",
+                lblWallet: "ನನ್ನ ಬ್ಯಾಲೆನ್ಸ್",
+                cardBoard: "ಕಾರ್ಡ್ ಬೋರ್ಡ್",
+                cardsDealt: "11 ಕಾರ್ಡ್ ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ",
+                cardInfoFooter: "ಆಯ್ಕೆ ಮಾಡಲು ಕಾರ್ಡ್ ಕ್ಲಿಕ್ ಮಾಡಿ. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಳಸಿ ಬೆಟ್ ಮಾಡಿ.",
+                winCalcFooter: "ಸರಿಯಾದ ಊಹೆಗೆ +250% ಲಾಭ (3.5x ಪಾವತಿ) ಸಿಗುತ್ತದೆ",
+                placeBetTitle: "ಬೆಟ್ ಮಾಡಿ",
+                selectionLbl: "ನಿಮ್ಮ ಆಯ್ಕೆ",
+                cardSelectionStatus: "ಬೋರ್ಡ್‌ನಿಂದ ಒಂದನ್ನು ಆರಿಸಿ",
+                betAmountLbl: "ಬೆಟ್ ಮೊತ್ತ",
+                quickChipLbl: "ತ್ವರಿತ ಚಿಪ್ ಸೇರಿಸಿ",
+                btnChooseBet: "ಕಾರ್ಡ್ ಆರಿಸಿ ಮತ್ತು ಬೆಟ್ ಮಾಡಿ",
+                lobbyTitle: "ಅಖಾಡ ಲಾಬಿ",
+                winsHistoryTitle: "ಗೆಲುವಿನ ಇತಿಹಾಸ",
+                provablyTitle: "ನ್ಯಾಯೋಚಿತ ಆಡಿಟ್",
+                hashLbl: "ಸುತ್ತಿನ SHA-256 ಹ್ಯಾಶ್",
+                saltLbl: "ಸಾಲ್ಟ್ (ಸುತ್ತಿನ ಕೊನೆಯಲ್ಲಿ ಬಹಿರಂಗ)",
+                saltVal: "ಫಲಿತಾಂಶದವರೆಗೆ ಮರೆಮಾಡಲಾಗಿದೆ",
+                provablyDesc: "SHA-256 ಹ್ಯಾಶ್ ಅನ್ನು ವಿಜೇತ ಕಾರ್ಡ್ + ಸಾಲ್ಟ್ ಸಂಯೋಜನೆಯಿಂದ ರಚಿಸಲಾಗುತ್ತದೆ. ಇದು ಸರ್ವರ್ ಮುಂಚಿತವಾಗಿ ವಿಜೇತರನ್ನು ನಿರ್ಧರಿಸಿದೆ ಎಂದು ಖಚಿತಪಡಿಸುತ್ತದೆ!",
+                modalEarningsLbl: "ನಿಮ್ಮ ಗಳಿಕೆ",
+                modalBackBtn: "ಬೋರ್ಡ್‌ಗೆ ಹಿಂತಿರುಗಿ",
+                lobbyEmptyPlaceholder: "ಲಾಬಿ ಖಾಲಿಯಾಗಿದೆ",
+                winsEmptyPlaceholder: "ಯಾವುದೇ ಇತಿಹಾಸವಿಲ್ಲ",
+                choosingPhase: "ಆಯ್ಕೆ ಮಾಡುವ ಹಂತ",
+                choosingDesc: "ಕಾರ್ಡ್ ಆರಿಸಿ ಬೆಟ್ ಮಾಡಿ",
+                shufflingPhase: "ಶಫಲಿಂಗ್ ಆಗುತ್ತಿದೆ",
+                shufflingDesc: "ಕಾರ್ಡ್ ಶಫಲ್ ಆಗುತ್ತಿದೆ, ಫಲಿತಾಂಶ ಬರುತ್ತಿದೆ...",
+                resultPhase: "ಸುತ್ತು ಮುಗಿದಿದೆ",
+                resultDesc: "ಗೆಲುವಿನ ಪಾವತಿ ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ",
+                noCardSelected: "ಕಾರ್ಡ್ ಆಯ್ಕೆ ಮಾಡಿಲ್ಲ",
+                pickOneFromBoard: "ಬೋರ್ಡ್‌ನಿಂದ ಒಂದು ಕಾರ್ಡ್ ಆರಿಸಿ",
+                payoutLocked: "ಬೆಟ್ಟಿಂಗ್ ಲಾಕ್ ಆಗಿದೆ",
+                payoutPlaced: "ಬೆಟ್ ಲಾಕ್ ಆಗಿದೆ",
+                winResult: "🏆 ವಿಜೇತ!",
+                loseResult: "💀 ಸೋತಿದ್ದೀರಿ",
+                suitHearts: "ಹಾರ್ಟ್ಸ್",
+                suitDiamonds: "ಡೈಮಂಡ್ಸ್",
+                suitClubs: "ಕ್ಲಬ್ಸ್",
+                suitSpades: "ಸ್ಪೇಡ್ಸ್",
+                suitVibrant: "ವೈಬ್ರೆಂಟ್"
+            },
+            ml: {
+                modalSubtitle: "മൾട്ടിപ്ലെയർ കാർഡ് അരീന",
+                lblGladiatorName: "നിങ്ങളുടെ പേര്",
+                btnEnterArena: "അരീനയിൽ പ്രവേശിക്കുക",
+                brandDesc: "പ്രൊവബ്ലി ഫെയർ മൾട്ടിപ്ലെയർ",
+                lblWallet: "എന്റെ ബാലൻസ്",
+                cardBoard: "കാർഡ് ബോർഡ്",
+                cardsDealt: "11 കാർഡുകൾ തിരഞ്ഞെടുത്തു",
+                cardInfoFooter: "തിരഞ്ഞെടുക്കാൻ കാർഡിൽ ക്ലിക്ക് ചെയ്യുക. ഡാഷ്‌ബോർഡ് ഉപയോഗിച്ച് ബെറ്റ് വെക്കുക.",
+                winCalcFooter: "ശരിയായ ഊഹത്തിന് +250% ലാഭം (3.5x പേഔട്ട്) ലഭിക്കും",
+                placeBetTitle: "ബെറ്റ് വെക്കുക",
+                selectionLbl: "നിങ്ങളുടെ തിരഞ്ഞെടുപ്പ്",
+                cardSelectionStatus: "ബോർഡിൽ നിന്ന് ഒന്ന് തിരഞ്ഞെടുക്കുക",
+                betAmountLbl: "ബെറ്റ് തുക",
+                quickChipLbl: "ക്വിക്ക് ചിപ്പ് അഡിഷൻ",
+                btnChooseBet: "കാർഡ് തിരഞ്ഞെടുത്ത് ബെറ്റ് ചെയ്യുക",
+                lobbyTitle: "അരീന ലോബി",
+                winsHistoryTitle: "വിജയ ചരിത്രം",
+                provablyTitle: "പ്രൊവബ്ലി ഫെയർ ഓഡിറ്റ്",
+                hashLbl: "റൗണ്ട് SHA-256 ഹാഷ്",
+                saltLbl: "സാൾട്ട് (റൗണ്ട് ഒടുവിൽ വെളിപ്പെടുത്തും)",
+                saltVal: "ഫലം വരുന്നതുവരെ മറച്ചിരിക്കുന്നു",
+                provablyDesc: "വിജയിച്ച കാർഡും സാൾട്ടും ചേർത്ത് ഹാഷ് ചെയ്താണ് SHA-256 ഹാഷ് ഉണ്ടാക്കുന്നത്. ഇത് സെർവർ മുൻകൂട്ടി ഫലം നിശ്ചയിച്ചു എന്ന് ഉറപ്പാക്കുന്നു!",
+                modalEarningsLbl: "നിങ്ങളുടെ വരുമാനം",
+                modalBackBtn: "ബോർഡിലേക്ക് മടങ്ങുക",
+                lobbyEmptyPlaceholder: "ലോബി ശൂന്യമാണ്",
+                winsEmptyPlaceholder: "ചരിത്രം ലഭ്യമല്ല",
+                choosingPhase: "തിരഞ്ഞെടുപ്പ് ഘട്ടം",
+                choosingDesc: "കാർഡ് തിരഞ്ഞെടുത്ത് ബെറ്റ് വെക്കുക",
+                shufflingPhase: "ഷഫലിംഗ് ഘട്ടം",
+                shufflingDesc: "കാർഡുകൾ ഷഫിൾ ചെയ്യുന്നു, ഫലം വരുന്നു...",
+                resultPhase: "റൗണ്ട് കഴിഞ്ഞു",
+                resultDesc: "വിജയ പേഔട്ടുകൾ പരിശോധിക്കുന്നു",
+                noCardSelected: "കാർഡ് തിരഞ്ഞെടുത്തിട്ടില്ല",
+                pickOneFromBoard: "ബോർഡിൽ നിന്ന് ഒരു കാർഡ് തിരഞ്ഞെടുക്കുക",
+                payoutLocked: "ബെറ്റിംഗ് ലോക്ക് ചെയ്തു",
+                payoutPlaced: "ബെറ്റ് ലോക്ക് ചെയ്തു",
+                winResult: "🏆 വിജയി!",
+                loseResult: "💀 തോറ്റു",
+                suitHearts: "ഹാർട്ട്സ്",
+                suitDiamonds: "ഡയമണ്ട്സ്",
+                suitClubs: "ക്ലബ്ബ്സ്",
+                suitSpades: "സ്പേഡ്സ്",
+                suitVibrant: "വൈബ്രന്റ്"
+            }
+        };
+        
+        // Generate persistent unique user identification or use existing
+        let myId = localStorage.getItem('PLAYER_UID') || 'ID_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('PLAYER_UID', myId);
+
+        let myName = localStorage.getItem('PLAYER_NAME') || '';
+        let myBalance = 10000;
+        let selectedCardCode = null;
+        let hasBetPlaced = false;
+        let lastRoundId = null;
+        let currentTimerMax = 20;
+        let currentLang = localStorage.getItem('PLAYER_LANG') || 'en';
+
+        // Localize Matka Page Texts
+        function localizePage() {
+            const t = TRANSLATIONS[currentLang];
+            if (!t) return;
+
+            document.getElementById('lang-header-select').value = currentLang;
+
+            // Direct translations
+            document.getElementById('tr-modal-subtitle').textContent = t.modalSubtitle;
+            document.getElementById('tr-lbl-gladiator-name').textContent = t.lblGladiatorName;
+            document.getElementById('tr-btn-enter-arena').textContent = t.btnEnterArena;
+            document.getElementById('tr-brand-desc').textContent = t.brandDesc;
+            document.getElementById('tr-lbl-wallet').textContent = t.lblWallet;
+            document.getElementById('tr-card-board').textContent = t.cardBoard;
+            document.getElementById('tr-cards-dealt').textContent = t.cardsDealt;
+            document.getElementById('tr-card-info-footer').innerHTML = `<i class="fa-solid fa-circle-info text-purple-400/70 mr-1"></i> ${t.cardInfoFooter}`;
+            document.getElementById('tr-win-calc-footer').innerHTML = `<i class="fa-solid fa-bolt mr-1"></i> ${t.winCalcFooter}`;
+            document.getElementById('tr-place-bet-title').textContent = t.placeBetTitle;
+            document.getElementById('tr-selection-lbl').textContent = t.selectionLbl;
+            document.getElementById('tr-bet-amount-lbl').textContent = t.betAmountLbl;
+            document.getElementById('tr-quick-chip-lbl').textContent = t.quickChipLbl;
+            document.getElementById('tr-lobby-title').textContent = t.lobbyTitle;
+            document.getElementById('tr-wins-history-title').textContent = t.winsHistoryTitle;
+            document.getElementById('tr-provably-title').textContent = t.provablyTitle;
+            document.getElementById('tr-hash-lbl').textContent = t.hashLbl;
+            document.getElementById('tr-salt-lbl').textContent = t.saltLbl;
+            document.getElementById('tr-provably-desc').textContent = t.provablyDesc;
+            document.getElementById('tr-modal-earnings-lbl').textContent = t.modalEarningsLbl;
+            document.getElementById('tr-modal-back-btn').textContent = t.modalBackBtn;
+
+            const lobbyEmpty = document.getElementById('tr-lobby-empty-placeholder');
+            if (lobbyEmpty) lobbyEmpty.textContent = t.lobbyEmptyPlaceholder;
+            const winsEmpty = document.getElementById('tr-wins-empty-placeholder');
+            if (winsEmpty) winsEmpty.textContent = t.winsEmptyPlaceholder;
+
+            // Handle preview box if nothing selected
+            if (!selectedCardCode) {
+                document.getElementById('chosen-card-title').textContent = t.noCardSelected;
+                document.getElementById('chosen-card-suit').textContent = t.pickOneFromBoard;
+            }
+
+            // Sync timer states
+            if (lastPhase) {
+                const statusText = document.getElementById('phase-status-text');
+                const subtext = document.getElementById('phase-subtext');
+                if (lastPhase === PHASES.CHOOSING) {
+                    statusText.textContent = t.choosingPhase;
+                    subtext.textContent = t.choosingDesc;
+                } else if (lastPhase === PHASES.SHUFFLING) {
+                    statusText.textContent = t.shufflingPhase;
+                    subtext.textContent = t.shufflingDesc;
+                } else if (lastPhase === PHASES.RESULT) {
+                    statusText.textContent = t.resultPhase;
+                    subtext.textContent = t.resultDesc;
+                }
+            }
+
+            updateBettingControlsStatus();
+        }
+
+        // Change languages globe click handler
+        function changeHeaderLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('PLAYER_LANG', lang);
+            localizePage();
+        }
+
+        // Auto-login flow
+        window.addEventListener('DOMContentLoaded', () => {
+            localizePage();
+            
+            if (myName) {
+                document.getElementById('user-name-display').textContent = myName;
+                document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(myName)}&background=8b5cf6&color=fff&bold=true`;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('game-workspace').classList.remove('hidden');
+                socket.emit('join', { id: myId, name: myName });
+            }
+        });
+
+        // Card Suits configuration
+        const suitConfigs = {
+            'H': { symbol: '♥', name: 'Hearts', color: '#f43f5e', glow: 'rgba(244, 63, 94, 0.4)' },
+            'D': { symbol: '♦', name: 'Diamonds', color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' },
+            'C': { symbol: '♣', name: 'Clubs', color: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
+            'S': { symbol: '♠', name: 'Spades', color: '#6366f1', glow: 'rgba(99, 102, 241, 0.4)' }
+        };
+
+        // Render card code (e.g. '10H') to beautiful HTML string
+        function createCardHTML(cardCode) {
+            const rank = cardCode.substring(0, cardCode.length - 1);
+            const suitLetter = cardCode.substr(-1);
+            const cfg = suitConfigs[suitLetter] || { symbol: suitLetter, color: '#000000', glow: 'none' };
+            
+            return `
+                <div class="card-inner">
+                    <div class="card-face card-front" style="color: ${cfg.color};">
+                        <div class="text-left font-black leading-none text-xs sm:text-base">
+                            <div>${rank}</div>
+                            <div class="text-[9px] sm:text-xs mt-0.5">${cfg.symbol}</div>
+                        </div>
+                        <div class="suit-large text-center select-none font-semibold" style="text-shadow: 0 4px 8px ${cfg.glow};">${cfg.symbol}</div>
+                        <div class="text-right font-black leading-none text-xs sm:text-base select-none">
+                            <div>${rank}</div>
+                            <div class="text-[9px] sm:text-xs mt-0.5">${cfg.symbol}</div>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <div class="card-back-pattern">
+                            <i class="fa-solid fa-spade"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Synchronize state from backend
+        function handleGameStateUpdate(state) {
+            const players = state.activePlayers || [];
+            const me = players.find(p => p.id === myId);
+            
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+            if (me) {
+                const oldBalance = myBalance;
+                myBalance = me.balance;
+                
+                // Update balance on screen
+                const balEl = document.getElementById('user-balance');
+                balEl.textContent = Number(myBalance).toLocaleString();
+                
+                // Visual indicators if balance changes
+                if (oldBalance !== myBalance && oldBalance > 0) {
+                    balEl.classList.remove('balance-gain', 'balance-loss');
+                    void balEl.offsetWidth; // trigger reflow
+                    if (myBalance > oldBalance) {
+                        balEl.classList.add('balance-gain');
+                    } else {
+                        balEl.classList.add('balance-loss');
+                    }
+                }
+
+                // Sync current round bet state
+                if (me.bet && me.bet.cardCode) {
+                    selectedCardCode = me.bet.cardCode;
+                    hasBetPlaced = true;
+                    document.getElementById('bet-amount').value = me.bet.amount;
+                } else if (state.phase === PHASES.CHOOSING && !hasBetPlaced) {
+                    // Keep card selection unless a new round starts
+                }
+            }
+
+            // Sync Lobby Players
+            const activeCountEl = document.getElementById('active-players-count');
+            activeCountEl.textContent = players.length;
+
+            const lobbyEl = document.getElementById('lobby-players-list');
+            if (players.length === 0) {
+                lobbyEl.innerHTML = `<div class="text-slate-500 text-xs italic text-center py-10" id="tr-lobby-empty-placeholder">${t.lobbyEmptyPlaceholder}</div>`;
+            } else {
+                lobbyEl.innerHTML = players.map(p => {
+                    const avatarUrl = `https://ui-avatars.com/api/?name=${p.name}&background=8b5cf6&color=fff`;
+                    const isSelf = p.id === myId;
+                    
+                    let betStatus = `<span class="text-slate-500 italic text-[10px]">Thinking...</span>`;
+                    if (p.bet && p.bet.cardCode) {
+                        const rank = p.bet.cardCode.substring(0, p.bet.cardCode.length - 1);
+                        const suitLetter = p.bet.cardCode.substr(-1);
+                        const suitCfg = suitConfigs[suitLetter];
+                        const symbol = suitCfg ? suitCfg.symbol : suitLetter;
+                        const color = suitCfg ? suitCfg.color : 'white';
+                        
+                        betStatus = `
+                            <div class="flex items-center gap-1 bg-black/40 border border-[#2b2553] px-2 py-0.5 rounded">
+                                <span class="font-black text-[10px]" style="color: ${color};">${rank}${symbol}</span>
+                                <span class="text-[9px] text-amber-400 font-bold">$${p.bet.amount}</span>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div class="flex items-center justify-between bg-black/25 border border-purple-500/5 hover:border-purple-500/10 px-3.5 py-2.5 rounded-xl transition-all">
+                            <div class="flex items-center gap-2.5">
+                                <img src="${avatarUrl}" class="w-7 h-7 rounded border border-purple-500/30">
+                                <div>
+                                    <div class="text-xs font-bold ${isSelf ? 'text-purple-400 glow-text-purple' : 'text-slate-200'}">${p.name} ${isSelf ? '(You)' : ''}</div>
+                                    <div class="text-[9px] text-slate-500">$${Number(p.balance).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div>${betStatus}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Sync History
+            const historyEl = document.getElementById('history-container');
+            if (!state.history || state.history.length === 0) {
+                historyEl.innerHTML = `<div class="text-slate-500 text-xs italic text-center w-full py-10" id="tr-wins-empty-placeholder">${t.winsEmptyPlaceholder}</div>`;
+            } else {
+                historyEl.innerHTML = state.history.map(code => {
+                    const rank = code.substring(0, code.length - 1);
+                    const suitLetter = code.substr(-1);
+                    const suitCfg = suitConfigs[suitLetter] || { symbol: suitLetter, color: 'white' };
+                    return `
+                        <div class="flex flex-col items-center justify-between w-9 h-12 bg-white rounded-lg border border-slate-300 p-1 text-slate-900 select-none shadow hover:scale-110 transition-transform">
+                            <span class="text-[10px] font-black leading-none self-start" style="color: ${suitCfg.color};">${rank}</span>
+                            <span class="text-sm leading-none font-bold select-none" style="color: ${suitCfg.color};">${suitCfg.symbol}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Sync Provably Fair Hash
+            document.getElementById('provably-hash').textContent = state.hash || '...';
+
+            // Sync Countdown Timer Circle
+            const timerText = document.getElementById('timer-text');
+            timerText.textContent = state.timer;
+            
+            // Set max timer depending on current phase
+            if (state.phase === PHASES.CHOOSING) currentTimerMax = 20;
+            else if (state.phase === PHASES.SHUFFLING) currentTimerMax = 5;
+            else if (state.phase === PHASES.RESULT) currentTimerMax = 8;
+
+            const progressCircle = document.getElementById('timer-indicator');
+            const percent = (state.timer / currentTimerMax) * 100;
+            const circumference = 220; 
+            const offset = circumference - (percent / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+
+            // Change progress bar color based on phase
+            if (state.phase === PHASES.CHOOSING) {
+                progressCircle.style.stroke = '#8b5cf6'; 
+            } else if (state.phase === PHASES.SHUFFLING) {
+                progressCircle.style.stroke = '#fbbf24'; 
+            } else if (state.phase === PHASES.RESULT) {
+                progressCircle.style.stroke = '#10b981'; 
+            }
+
+            // Phase and UI management
+            const statusText = document.getElementById('phase-status-text');
+            const subtext = document.getElementById('phase-subtext');
+            
+            if (state.phase === PHASES.CHOOSING) {
+                statusText.textContent = t.choosingPhase;
+                statusText.className = "text-xs uppercase tracking-widest font-extrabold text-purple-400";
+                subtext.textContent = t.choosingDesc;
+
+                // Setup Cards on Board if they changed or is a new round
+                if (lastRoundId !== state.roundId) {
+                    lastRoundId = state.roundId;
+                    selectedCardCode = null;
+                    hasBetPlaced = false;
+                    
+                    document.getElementById('chosen-card-placeholder').innerHTML = `<i class="fa-solid fa-plus text-lg"></i>`;
+                    document.getElementById('chosen-card-title').textContent = t.noCardSelected;
+                    document.getElementById('chosen-card-title').className = "text-lg font-black text-slate-400";
+                    document.getElementById('chosen-card-suit').textContent = t.pickOneFromBoard;
+                    document.getElementById('chosen-card-suit').className = "text-xs text-slate-500";
+                    
+                    document.getElementById('provably-salt').textContent = t.saltVal;
+                    
+                    // Enable bet inputs
+                    document.getElementById('bet-amount').disabled = false;
+                    
+                    // Render the 11 cards
+                    const board = document.getElementById('cards-board');
+                    board.innerHTML = state.pickedCards.map((card, idx) => `
+                        <div class="card-container" id="card-node-${card}" onclick="selectCard('${card}')">
+                            ${createCardHTML(card)}
+                        </div>
+                    `).join('');
+                }
+
+                // If players have already bet, lock inputs
+                updateBettingControlsStatus();
+            } 
+            else if (state.phase === PHASES.SHUFFLING) {
+                statusText.textContent = t.shufflingPhase;
+                statusText.className = "text-xs uppercase tracking-widest font-extrabold text-amber-400";
+                subtext.textContent = t.shufflingDesc;
+                
+                // Visual feedback: flip all cards face down and animate
+                document.querySelectorAll('.card-container').forEach((node, idx) => {
+                    node.classList.add('flipped');
+                    node.style.setProperty('--x-offset', `${(Math.random() - 0.5) * 80}px`);
+                    node.style.setProperty('--y-offset', `${-30 - Math.random() * 50}px`);
+                    node.style.setProperty('--rot-offset', `${(Math.random() - 0.5) * 40}deg`);
+                    
+                    node.style.setProperty('--x-offset-end', `${(Math.random() - 0.5) * 80}px`);
+                    node.style.setProperty('--y-offset-end', `${15 + Math.random() * 50}px`);
+                    node.style.setProperty('--rot-offset-end', `${(Math.random() - 0.5) * 40}deg`);
+                    
+                    node.classList.add('shuffling-animation');
+                    node.style.animationDelay = `${idx * 0.05}s`;
+                });
+
+                disableBettingControls();
+            } 
+            else if (state.phase === PHASES.RESULT) {
+                statusText.textContent = t.resultPhase;
+                statusText.className = "text-xs uppercase tracking-widest font-extrabold text-emerald-400";
+                subtext.textContent = t.resultDesc;
+
+                // Stop shuffling animation
+                document.querySelectorAll('.card-container').forEach(node => {
+                    node.classList.remove('shuffling-animation');
+                });
+
+                // Reveal winning card
+                if (state.resultCard) {
+                    const winCard = state.resultCard;
+                    
+                    // Highlight on board
+                    const winNode = document.getElementById(`card-node-${winCard}`);
+                    if (winNode) {
+                        winNode.classList.remove('flipped'); 
+                        winNode.classList.add('winner-card');
+                    }
+
+                    // Flip remaining cards back face-up
+                    document.querySelectorAll('.card-container').forEach(node => {
+                        if (node.id !== `card-node-${winCard}`) {
+                            node.classList.remove('flipped');
+                            node.style.opacity = '0.35'; 
+                        }
+                    });
+                }
+
+                disableBettingControls();
+            }
+
+            lastPhase = state.phase;
+        }
+
+        // Active Player Actions
+        function selectCard(cardCode) {
+            if (hasBetPlaced) return; 
+            
+            document.querySelectorAll('.card-container').forEach(node => {
+                node.classList.remove('selected');
+            });
+
+            const node = document.getElementById(`card-node-${cardCode}`);
+            if (node) {
+                node.classList.add('selected');
+            }
+
+            selectedCardCode = cardCode;
+            
+            // Update preview dashboard
+            const rank = cardCode.substring(0, cardCode.length - 1);
+            const suitLetter = cardCode.substr(-1);
+            const suitCfg = suitConfigs[suitLetter] || { symbol: suitLetter, color: 'white', name: '' };
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+            // Map suit localized name
+            let suitLocName = suitCfg.name;
+            if (currentLang === 'hi') {
+                if (suitLetter === 'H') suitLocName = t.suitHearts;
+                else if (suitLetter === 'D') suitLocName = t.suitDiamonds;
+                else if (suitLetter === 'C') suitLocName = t.suitClubs;
+                else if (suitLetter === 'S') suitLocName = t.suitSpades;
+            } else if (currentLang === 'mr') {
+                if (suitLetter === 'H') suitLocName = t.suitHearts;
+                else if (suitLetter === 'D') suitLocName = t.suitDiamonds;
+                else if (suitLetter === 'C') suitLocName = t.suitClubs;
+                else if (suitLetter === 'S') suitLocName = t.suitSpades;
+            } else if (currentLang === 'kn') {
+                if (suitLetter === 'H') suitLocName = t.suitHearts;
+                else if (suitLetter === 'D') suitLocName = t.suitDiamonds;
+                else if (suitLetter === 'C') suitLocName = t.suitClubs;
+                else if (suitLetter === 'S') suitLocName = t.suitSpades;
+            } else if (currentLang === 'ml') {
+                if (suitLetter === 'H') suitLocName = t.suitHearts;
+                else if (suitLetter === 'D') suitLocName = t.suitDiamonds;
+                else if (suitLetter === 'C') suitLocName = t.suitClubs;
+                else if (suitLetter === 'S') suitLocName = t.suitSpades;
+            }
+            
+            const placeholder = document.getElementById('chosen-card-placeholder');
+            placeholder.innerHTML = `
+                <div class="text-center font-extrabold select-none leading-none" style="color: ${suitCfg.color}; font-size: 1.2rem;">
+                    <div>${rank}</div>
+                    <div class="text-sm mt-0.5">${suitCfg.symbol}</div>
+                </div>
+            `;
+            
+            const title = document.getElementById('chosen-card-title');
+            title.textContent = `${rank} of ${suitLocName}`;
+            title.className = "text-lg font-black";
+            title.style.color = suitCfg.color;
+
+            const suitDesc = document.getElementById('chosen-card-suit');
+            suitDesc.textContent = `${t.suitVibrant} ${suitLocName} Card Selected`;
+            suitDesc.className = "text-xs text-slate-400";
+
+            updateBettingControlsStatus();
+        }
+
+        function updateBettingControlsStatus() {
+            const btn = document.getElementById('place-bet-btn');
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+            if (selectedCardCode && !hasBetPlaced) {
+                btn.disabled = false;
+                btn.className = "w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black py-4 rounded-xl shadow-lg hover:shadow-amber-500/20 transition-all uppercase tracking-wider text-xs flex items-center justify-center gap-2";
+                btn.innerHTML = `<i class="fa-solid fa-play"></i> ${t.btnChooseBet} (${selectedCardCode})`;
+            } else if (hasBetPlaced) {
+                btn.disabled = true;
+                btn.className = "w-full bg-emerald-950/40 border border-emerald-900/30 text-emerald-400 font-extrabold py-4 rounded-xl transition-all uppercase tracking-wider text-xs flex items-center justify-center gap-2";
+                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${t.payoutPlaced} ($${document.getElementById('bet-amount').value})`;
+                document.getElementById('bet-amount').disabled = true;
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full bg-purple-950/10 border border-purple-900/10 text-purple-900/30 font-black py-4 rounded-xl transition-all uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-not-allowed";
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> ${t.btnChooseBet}`;
+            }
+        }
+
+        function disableBettingControls() {
+            const btn = document.getElementById('place-bet-btn');
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+            btn.disabled = true;
+            btn.className = "w-full bg-purple-950/10 border border-purple-900/10 text-purple-900/30 font-black py-4 rounded-xl transition-all uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-not-allowed";
+            btn.innerHTML = `<i class="fa-solid fa-lock"></i> ${t.payoutLocked}`;
+            document.getElementById('bet-amount').disabled = true;
+        }
+
+        // Chip selection interactions
+        document.querySelectorAll('.chip-btn').forEach(btn => {
+            btn.onclick = () => {
+                if (hasBetPlaced) return;
+                
+                document.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('selected-chip'));
+                btn.classList.add('selected-chip');
+
+                const chipVal = parseInt(btn.getAttribute('data-chip'));
+                const input = document.getElementById('bet-amount');
+                let currentVal = parseInt(input.value) || 0;
+                input.value = currentVal + chipVal;
+            };
+        });
+
+        // Modifiers buttons handlers
+        document.querySelectorAll('.btn-modifier').forEach(btn => {
+            btn.onclick = () => {
+                if (hasBetPlaced) return;
+
+                const op = btn.getAttribute('data-op');
+                const input = document.getElementById('bet-amount');
+                let val = parseInt(input.value) || 0;
+
+                if (op === 'min') val = 10;
+                else if (op === 'half') val = Math.floor(val / 2);
+                else if (op === 'double') val = val * 2;
+                else if (op === 'max') val = myBalance;
+                else if (op === 'clear') {
+                    val = 0;
+                    document.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('selected-chip'));
+                }
+
+                input.value = Math.max(0, val);
+            };
+        });
+
+        // Place bet submission
+        document.getElementById('place-bet-btn').onclick = () => {
+            if (!selectedCardCode || hasBetPlaced) return;
+
+            const amountInput = document.getElementById('bet-amount');
+            const betAmount = parseInt(amountInput.value);
+
+            if (isNaN(betAmount) || betAmount < 10) {
+                alert("Minimum bet is 10 coins!");
+                return;
+            }
+
+            if (betAmount > myBalance) {
+                alert("Insufficient balance!");
+                return;
+            }
+
+            socket.emit('placeBet', { cardCode: selectedCardCode, amount: betAmount });
+            hasBetPlaced = true;
+            updateBettingControlsStatus();
+        };
+
+        // Modal triggers on round end
+        socket.on('betResult', ({ win, profit, winningCard, salt }) => {
+            // Update provably fair salt
+            document.getElementById('provably-salt').textContent = salt;
+
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+            // Render result modal details after transition
+            setTimeout(() => {
+                const title = document.getElementById('modal-result-title');
+                const badge = document.getElementById('modal-badge-container');
+                const earningsBox = document.getElementById('modal-earnings-box');
+                const earningsAmount = document.getElementById('modal-earnings-amount');
+                const glow = document.getElementById('modal-decor-glow');
+
+                // Render winning card inside slot
+                const rank = winningCard.substring(0, winningCard.length - 1);
+                const suitLetter = winningCard.substr(-1);
+                const suitCfg = suitConfigs[suitLetter] || { symbol: suitLetter, color: 'black' };
+                
+                const winCardSlot = document.getElementById('winning-card-slot');
+                winCardSlot.style.color = suitCfg.color;
+                document.getElementById('slot-rank-top').textContent = rank;
+                document.getElementById('slot-suit-top').textContent = suitCfg.symbol;
+                document.getElementById('slot-suit-center').textContent = suitCfg.symbol;
+                document.getElementById('slot-rank-bottom').textContent = rank;
+                document.getElementById('slot-suit-bottom').textContent = suitCfg.symbol;
+
+                if (win) {
+                    title.textContent = t.winResult;
+                    title.className = "text-4xl font-extrabold tracking-tighter text-emerald-400 uppercase mb-2";
+                    badge.textContent = "👑";
+                    badge.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center bg-emerald-950 border-2 border-emerald-400 mb-6 text-4xl shadow-lg";
+                    glow.className = "absolute -top-12 -left-12 w-48 h-48 bg-emerald-600/20 rounded-full blur-3xl";
+                    
+                    earningsBox.classList.remove('hidden');
+                    earningsAmount.textContent = `+${Number(profit).toLocaleString()} COINS`;
+                    earningsAmount.className = "text-2xl font-black text-emerald-400 mt-0.5";
+
+                    // Burst confetti
+                    confetti({
+                        particleCount: 120,
+                        spread: 80,
+                        origin: { y: 0.65 }
+                    });
+                } else {
+                    title.textContent = t.loseResult;
+                    title.className = "text-4xl font-extrabold tracking-tighter text-rose-500 uppercase mb-2";
+                    badge.textContent = "💀";
+                    badge.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center bg-rose-950 border-2 border-rose-500 mb-6 text-4xl shadow-lg";
+                    glow.className = "absolute -top-12 -left-12 w-48 h-48 bg-rose-600/10 rounded-full blur-3xl";
+                    
+                    if (hasBetPlaced) {
+                        earningsBox.classList.remove('hidden');
+                        earningsAmount.textContent = `LOST BET`;
+                        earningsAmount.className = "text-2xl font-black text-rose-400 mt-0.5";
+                    } else {
+                        earningsBox.classList.add('hidden'); 
+                    }
+                }
+
+                document.getElementById('result-modal').classList.remove('hidden');
+            }, 1000);
+        });
+
+        // Close Result Modal
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.add('hidden');
+        }
+
+        // Initialize User Registration
+        document.getElementById('join-btn').onclick = () => {
+            const nameInput = document.getElementById('username-input');
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            myName = name;
+            localStorage.setItem('PLAYER_NAME', myName);
+            
+            // Sync user details locally
+            document.getElementById('user-name-display').textContent = myName;
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(myName)}&background=8b5cf6&color=fff&bold=true`;
+
+            // Hide auth screen and display workspace
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('game-workspace').classList.remove('hidden');
+
+            // Connect to server socket
+            socket.emit('join', { id: myId, name: myName });
+        };
+
+        // Listen for standard updates
+        socket.on('gameStateUpdate', handleGameStateUpdate);
+    </script>
+</body>
+</html>

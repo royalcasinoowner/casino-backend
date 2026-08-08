@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Teen Patti - Elite VIP Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold-light: #fbeea1; --gold: #d4af37; --gold-dark: #997a15;
+  --emerald-dark: #061e12; --emerald: #0b3d22; --emerald-light: #16683b;
+  --leather: #0b0c10; --leather-light: #1f2833;
+  --bg-color: #020202;
+  --glass: rgba(15, 20, 25, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-w: 44px; --card-h: 62px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-color); touch-action: none; }
+body { display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; color: #fff; perspective: 1000px; }
+
+#app {
+  width: 100vw; height: 100vh; position: relative;
+  background: radial-gradient(circle at 50% 40%, #0d1218 0%, var(--bg-color) 100%);
+  overflow: hidden;
+}
+
+#intro-screen {
+  position: absolute; inset: 0; z-index: 999; background: #000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.5s ease;
+}
+.logo-large { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 800; color: var(--gold-light); letter-spacing: 6px; margin-bottom: 30px; text-shadow: 0 0 30px rgba(212,175,55,0.6); text-align: center; line-height: 1.1; }
+.btn-enter {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+  color: #000; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 900;
+  padding: 16px 40px; border-radius: 30px; border: none; cursor: pointer;
+  box-shadow: 0 10px 30px rgba(212,175,55,0.3); text-transform: uppercase; letter-spacing: 2px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-enter:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(212,175,55,0.5); }
+
+#tbl-wrap {
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
+  width: 75vw; max-width: 720px; aspect-ratio: 1.6; pointer-events: none; z-index: 1;
+}
+#tbl-shadow { position: absolute; inset: -20px; border-radius: 120px; background: rgba(40, 80, 200, 0.1); filter: blur(30px); }
+#tbl-armrest {
+  position: absolute; inset: 0; border-radius: 200px;
+  background: linear-gradient(135deg, #111424, #080a12, #1a1e36);
+  box-shadow: inset 0 10px 20px rgba(255,255,255,0.1), inset 0 -15px 30px rgba(0,0,0,0.9), 0 15px 40px rgba(0,0,0,1);
+  padding: 24px;
+}
+#tbl-glow-ring {
+  width: 100%; height: 100%; border-radius: 180px;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2);
+  padding: 4px; animation: spinGlow 40s linear infinite;
+}
+@keyframes spinGlow { 100% { transform: rotate(360deg); } }
+#tbl-felt-container {
+  width: 100%; height: 100%; border-radius: 170px; background: var(--emerald-dark);
+  animation: spinGlow 40s linear infinite reverse; position: relative; overflow: hidden; pointer-events: all;
+  box-shadow: inset 0 0 40px rgba(0,0,0,1);
+}
+#tbl-felt {
+  position: absolute; inset: -20%;
+  background: radial-gradient(ellipse at 50% 50%, var(--emerald-light) 0%, var(--emerald) 60%, var(--emerald-dark) 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.table-logo {
+  position: absolute; font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 800;
+  color: rgba(255, 255, 255, 0.1); letter-spacing: 5px; text-transform: uppercase; text-align: center; line-height: 1.2;
+}
+
+#table-center-msg {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
+  font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold-light);
+  text-shadow: 0 0 20px rgba(212,175,55,0.8); z-index: 5; background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 170px;
+  transition: opacity 0.6s; pointer-events: none; display: none; opacity: 0;
+}
+.tcm-sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #aaa; letter-spacing: 2px; margin-top: 8px; text-shadow: none; font-weight: 500; text-transform: uppercase;}
+
+#dom-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.hud-panel {
+  position: absolute; top: 15px; width: 160px;
+  background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
+}
+#left-panel { left: 15px; } #right-panel { right: 15px; }
+.pbox-title { font-family: 'Playfair Display', serif; font-size: 12px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 6px; margin-bottom: 6px; }
+.irow { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+.ik { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+.iv { font-size: 13px; color: #fff; font-weight: 700; }
+.hr-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 10px; color: #888; }
+.hr-row.hl { color: var(--gold-light); font-weight: 700; text-shadow: 0 0 8px rgba(212,175,55,0.6); }
+.hr-n { background: rgba(255,255,255,0.1); color: #fff; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: 700; }
+.log-entry { font-size: 11px; color: #a4b0be; padding: 3px 0; line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.log-entry:first-child { color: #fff; font-weight: 500; border-left: 2px solid var(--gold); padding-left: 6px; }
+#log-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+.seat { position: absolute; z-index: 22; text-align: center; width: 140px; pointer-events: auto; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+#s0 { bottom: 12%; left: 50%; transform: translateX(-50%); }
+#s1 { top: 2%; left: 50%; transform: translateX(-50%); }
+#s2 { left: 5%; top: 42%; transform: translateY(-50%); }
+#s3 { right: 5%; top: 42%; transform: translateY(-50%); }
+
+.sbox {
+  background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-radius: 16px; padding: 10px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6); position: relative; transition: all 0.3s ease; overflow: hidden;
+}
+.sbox::before {
+  content: ''; position: absolute; inset: -1px; border-radius: 17px;
+  background: linear-gradient(45deg, var(--gold), transparent, var(--gold));
+  z-index: -1; opacity: 0; transition: opacity 0.3s;
+}
+.sbox.is-turn::before { opacity: 1; animation: breatheGlow 2s ease-in-out infinite alternate; }
+.sbox.is-turn { transform: translateY(-5px) scale(1.04); box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.3); }
+@keyframes breatheGlow { 0% { opacity: 0.5; filter: blur(2px); } 100% { opacity: 1; filter: blur(6px); } }
+
+.sbox.is-fold { opacity: 0.5; filter: grayscale(1); transform: scale(0.95); }
+.sbox.is-win { border-color: #2ed573; box-shadow: 0 0 30px rgba(46,213,115,0.5); }
+
+/* Matchmaking Searching Animation */
+.is-spinning .p-avatar { animation: scanPop 0.2s linear infinite alternate; filter: blur(0.5px); border-color: rgba(255,255,255,0.5); }
+.is-spinning::after {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(to bottom, transparent, rgba(212,175,55,0.2), transparent);
+  transform: rotate(45deg); animation: radarScan 1s linear infinite; pointer-events: none;
+}
+@keyframes scanPop { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
+@keyframes radarScan { 0% { top: -100%; } 100% { top: 100%; } }
+
+.p-avatar {
+  width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 800;
+  border: 2px solid rgba(255,255,255,0.2); background: linear-gradient(135deg, #1a2a3a, #0a101a);
+  position: relative; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.5); color: #fff;
+  transition: all 0.2s;
+}
+.timer-ring {
+  position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: #2ed573; border-right-color: #2ed573;
+  opacity: 0; transition: opacity 0.3s;
+}
+.sbox.is-turn .timer-ring { opacity: 1; animation: timerSpin 15s linear forwards; }
+@keyframes timerSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); border-color: #ff4757; } }
+
+.p-name-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px; }
+.p-name { font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.d-btn {
+  width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #fff, #ddd);
+  color: #000; font-size: 9px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.seat-cards { display: flex; gap: -12px; justify-content: center; margin: 8px 0; min-height: var(--card-h); perspective: 800px; }
+.card-wrapper {
+  width: var(--card-w); height: var(--card-h); position: relative; transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.card-wrapper:nth-child(1) { transform: rotate(-8deg); z-index: 1; }
+.card-wrapper:nth-child(2) { transform: translateY(-4px); z-index: 2; }
+.card-wrapper:nth-child(3) { transform: rotate(8deg); z-index: 3; }
+
+.card-face, .card-back {
+  width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 4px;
+  box-shadow: -2px 4px 8px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.1);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.card-face { background: #fff; font-weight: 800; font-size: 16px; color: #111; line-height: 1; transform: rotateY(180deg); }
+.card-face.red { color: #d63031; }
+.cr { margin-top: 2px; } .cs { font-size: 16px; margin-top: 2px; }
+
+.card-back { background: linear-gradient(135deg, #0a192f, #020c1b); border: 1px solid #1a365d; }
+.card-back::before {
+  content: ''; position: absolute; inset: 4px; border: 1px solid rgba(255,255,255,0.2); border-radius: 2px;
+  background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.05) 5px, rgba(255,255,255,0.05) 10px);
+}
+.card-back::after { content: '✤'; color: rgba(255,255,255,0.2); font-size: 20px; position: absolute; }
+
+.card-wrapper.deal-anim { animation: dealSwoop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes dealSwoop { 0% { transform: translate3d(0, -200px, -200px) scale(0) rotateX(180deg) rotateZ(90deg); opacity: 0; } }
+.card-wrapper.seen-anim { transform: rotateY(180deg) scale(1.1) !important; z-index: 10; }
+.card-wrapper.fold-anim { animation: foldToss 0.5s forwards cubic-bezier(0.5, 0, 1, 0.5); }
+@keyframes foldToss { to { transform: translate3d(0, -100px, -100px) scale(0.2) rotateZ(180deg); opacity: 0; } }
+
+.p-status-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px; height: 16px; }
+.badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-blind { background: rgba(9, 132, 227, 0.2); color: #74b9ff; border: 1px solid #0984e3; }
+.badge-seen { background: rgba(108, 92, 231, 0.2); color: #a29bfe; border: 1px solid #6c5ce7; }
+.badge-fold { background: rgba(214, 48, 49, 0.2); color: #ff7675; border: 1px solid #d63031; }
+
+.p-chips { font-family: 'Playfair Display', serif; font-size: 15px; color: #2ed573; margin-bottom: 2px; font-weight: 700; }
+.p-bet { font-size: 12px; color: var(--gold-light); min-height: 14px; font-weight: 600; display:flex; align-items:center; justify-content:center; gap:5px;}
+.p-act { font-size: 10px; font-style: italic; color: #ced6e0; min-height: 12px; margin-top: 2px; }
+
+/* Visual Mini Chips inside seats */
+.mini-chips-wrap { display: flex; gap: -6px; margin-left: 4px; }
+.mini-chip { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.6); box-shadow: 1px 1px 3px rgba(0,0,0,0.8); display: inline-block; margin-left: -5px;}
+.mini-chip:first-child { margin-left: 0; }
+
+#pot-text-area {
+  position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none; z-index: 10;
+}
+#pot-chips {
+  display: flex; gap: -5px; justify-content: center; flex-wrap: wrap; 
+  width: 120px; min-height: 24px; margin: 0 auto 5px; position: relative;
+}
+#pot-lbl { font-size: 11px; color: rgba(255,255,255,0.6); letter-spacing: 2px; font-weight: 700; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px;}
+#pot-amt { 
+  font-family: 'Playfair Display', serif; font-size: 32px; color: #fff; 
+  font-weight: 800; text-shadow: 0 4px 15px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.3); 
+}
+
+.pchip {
+  width: 24px; height: 24px; border-radius: 50%; position: relative; display: inline-block;
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.7), inset 0 1px 2px rgba(255,255,255,0.5); margin-left: -10px;
+}
+.pchip:first-child { margin-left: 0; }
+.pchip::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(#fff 0 15deg, transparent 15deg 45deg); opacity: 0.8;
+}
+.pchip::after {
+  content: ''; position: absolute; inset: 5px; border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.7); background: inherit;
+}
+
+#chip-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+
+#action-area {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center; padding: 20px; z-index: 40; pointer-events: none;
+}
+#action-btns {
+  display: flex; gap: 12px; justify-content: center; width: 100%; max-width: 600px; pointer-events: auto;
+}
+.btn {
+  flex: 1; min-width: 80px; max-width: 140px; padding: 14px 10px;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+  border-radius: 12px; border: none; cursor: pointer; color: #fff;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; pointer-events: auto;
+}
+.btn::after { content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent); transform:skewX(-25deg); transition: 0.5s; }
+.btn:hover:not(:disabled)::after { left: 150%; }
+.btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; filter: grayscale(0.8); cursor: not-allowed; box-shadow: none; }
+
+.bc { background: linear-gradient(135deg, #0984e3, #0652dd); } /* Call */
+.br { background: linear-gradient(135deg, #f39c12, #d35400); color: #fff; } /* Raise */
+.bf { background: linear-gradient(135deg, #d63031, #b33939); } /* Fold */
+.bs { background: linear-gradient(135deg, #6c5ce7, #4834d4); } /* See */
+.bsh { background: linear-gradient(135deg, #00b894, #009432); } /* Sideshow */
+.bdeal { background: linear-gradient(135deg, var(--gold-light), var(--gold-dark)); color: #000; font-size: 16px; padding: 16px 30px; max-width: 300px; box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+
+.overlay-panel {
+  background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 24px; text-align: center; width: 90%; max-width: 400px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.05); display: none; pointer-events: auto; margin-bottom: 20px;
+}
+#boot-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; margin-bottom: 5px; }
+#boot-chips { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+.bchip {
+  width: 60px; height: 60px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; transition: all 0.2s; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 5px 10px rgba(0,0,0,0.5); margin-left: 0;
+}
+.bchip:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+.bc1{ background-color: #576574; } .bc5{ background-color: #ee5253; } .bc10{ background-color: #10ac84; }
+.bc25{ background-color: #2e86de; } .bc50{ background-color: #222f3e; } .bc100{ background-color: #833471; }
+#boot-total { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--gold-light); text-shadow: 0 2px 10px rgba(212,175,55,0.5); display: block; margin-bottom: 20px; }
+#raise-slider { width: 100%; margin: 15px 0; accent-color: var(--gold); height: 6px; background: #333; border-radius: 3px; outline: none; }
+#raise-disp { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold-light); font-weight: 800; margin-bottom: 20px; }
+
+#on-table-log { position: absolute; left: 50%; bottom: 25%; transform: translateX(-50%); text-align: center; width: 80%; pointer-events: none; z-index:25;}
+.tlog-entry {
+  font-family: 'Playfair Display', serif; font-size: 18px; font-style: italic; font-weight: 800;
+  color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px var(--gold);
+  animation: floatUp 3s ease-out forwards; position: absolute; left: 0; right: 0;
+}
+@keyframes floatUp { 0% { opacity: 0; transform: translateY(15px); } 10% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; transform: translateY(-30px); } 100% { opacity: 0; transform: translateY(-45px); } }
+
+.action-toast {
+  position: absolute; font-size: 13px; font-weight: 900; padding: 6px 14px; border-radius: 20px;
+  pointer-events: none; z-index: 55; animation: toastPopFade 1.5s forwards;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 1px; color:#fff;
+}
+@keyframes toastPopFade { 0% { transform: scale(0.5) translateY(10px); opacity: 0; } 15% { transform: scale(1) translateY(0); opacity: 1; } 80% { opacity: 1; transform: translateY(-10px); } 100% { opacity: 0; transform: translateY(-20px); } }
+
+#result-layer {
+  position: absolute; inset: 0; background: rgba(4, 8, 6, 0.9);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; backdrop-filter: blur(10px); pointer-events: auto;
+}
+#result-layer.show { display: flex; animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.win-glow {
+  position: absolute; width: 300px; height: 300px; background: radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%);
+  animation: pulseWin 2s infinite alternate; z-index: -1;
+}
+@keyframes pulseWin { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 1; } }
+#rl-title { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--gold); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 10px; }
+#rl-name { font-family: 'Playfair Display', serif; font-size: 48px; color: #fff; text-shadow: 0 4px 20px rgba(212,175,55,0.6); font-style: italic; }
+#rl-cards { display: flex; gap: 8px; margin: 20px 0; }
+#rl-hand { font-size: 18px; color: #2ed573; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+#rl-pot { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold-light); margin-top: 10px; }
+
+#wait-msg { font-size: 14px; color: #fff; letter-spacing: 2px; font-weight: 600; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 20px; display: none; }
+.dot-pulse::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: '...'; } }
+
+@media (max-width: 900px) {
+  #tbl-wrap { width: 96vw; max-width: none; top: 46%; aspect-ratio: 1.1; }
+  #tbl-armrest { padding: 16px; }
+  #left-panel, #right-panel {
+    position: absolute; top: 0; bottom: auto; height: auto; border-radius: 0; border: none; border-bottom: 1px solid var(--glass-border);
+    flex-direction: row; align-items: center; justify-content: center; width: 100%; padding: 8px; gap: 15px; z-index: 10;
+  }
+  #left-panel { flex-wrap: wrap; justify-content: space-around; }
+  #left-panel .panel-box, .pbox-title { display: none; } 
+  .irow { flex-direction: column; gap: 2px; border: none; padding: 0; }
+  #right-panel { display: none; }
+  
+  .seat { transform: scale(0.8); transform-origin: center center; }
+  #s0 { bottom: 22%; transform: translateX(-50%) scale(0.85); }
+  #s1 { top: 8%; } #s2 { left: -5%; top: 42%; } #s3 { right: -5%; top: 42%; }
+  
+  #pot-amt { font-size: 24px; margin-bottom: 20px;}
+  #action-area { padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); }
+  .btn { padding: 14px 6px; font-size: 11px; }
+  .overlay-panel { padding: 20px 15px; } .bchip { width: 48px; height: 48px; font-size: 12px; }
+  #table-center-msg { font-size: 18px; }
+}
+@media (max-width: 400px) { .seat { transform: scale(0.7); } #s0 { bottom: 25%; } #tbl-wrap { top: 42%; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- INTRO SCREEN to unlock Audio Context -->
+  <div id="intro-screen">
+    <div class="logo-large">TEEN PATTI<br><span style="font-size: 24px; color: #fff;">VIP EDITION</span></div>
+    <button class="btn-enter" onclick="startApp()">Enter VIP Room</button>
+  </div>
+
+  <!-- HUD PANELS -->
+  <div id="dom-layer">
+    <div id="left-panel" class="hud-panel">
+      <div class="panel-box">
+        <div class="pbox-title">Hand Rankings</div>
+        <div class="hr-row" id="hr6"><span class="hr-n">6</span><span>Pure Sequence</span></div>
+        <div class="hr-row" id="hr5"><span class="hr-n">5</span><span>Trail (Set)</span></div>
+        <div class="hr-row" id="hr4"><span class="hr-n">4</span><span>Sequence</span></div>
+        <div class="hr-row" id="hr3"><span class="hr-n">3</span><span>Color</span></div>
+        <div class="hr-row" id="hr2"><span class="hr-n">2</span><span>Pair</span></div>
+        <div class="hr-row" id="hr1"><span class="hr-n">1</span><span>High Card</span></div>
+      </div>
+      <div style="flex:1; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px;">
+        <div class="irow"><span class="ik">Round</span><span class="iv" id="ib-round">—</span></div>
+        <div class="irow"><span class="ik">Ante</span><span class="iv" id="ib-boot">—</span></div>
+        <div class="irow"><span class="ik">Bet</span><span class="iv" id="ib-minbet">—</span></div>
+      </div>
+    </div>
+    <div id="right-panel" class="hud-panel">
+      <div class="pbox-title">Live Action</div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div id="tbl-wrap">
+    <div id="tbl-shadow"></div>
+    <div id="tbl-armrest">
+      <div id="tbl-glow-ring">
+        <div id="tbl-felt-container">
+          <div id="tbl-felt">
+            <div class="table-logo">Teen<br>Patti<br><span style="font-size:12px; font-family:'Inter'; color:#fff; opacity:0.5; letter-spacing:2px">VIP</span></div>
+          </div>
+          <div id="table-center-msg">
+            MATCHMAKING<span class="dot-pulse"></span>
+            <div class="tcm-sub" id="tcm-status">Scanning for High Rollers</div>
+          </div>
+          <div id="pot-text-area">
+            <div id="pot-chips"></div>
+            <div id="pot-lbl">POT</div>
+            <div id="pot-amt">₹0</div>
+          </div>
+          <div id="on-table-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEATS -->
+  <div id="s0" class="seat"></div>
+  <div id="s1" class="seat"></div>
+  <div id="s2" class="seat"></div>
+  <div id="s3" class="seat"></div>
+
+  <!-- FX LAYERS -->
+  <div id="chip-layer"></div>
+  <div id="toast-layer"></div>
+
+  <!-- RESULT OVERLAY -->
+  <div id="result-layer">
+    <div class="win-glow"></div>
+    <div id="rl-title">Winner Takes All</div>
+    <div id="rl-name"></div>
+    <div id="rl-cards"></div>
+    <div id="rl-hand"></div>
+    <div id="rl-pot"></div>
+    <div style="display:flex; gap:10px; margin-top:30px;">
+      <button class="btn bc" onclick="newRound()">Next Round</button>
+      <button class="btn bf" onclick="resetGame()">Restart Game</button>
+    </div>
+  </div>
+
+  <!-- ACTION AREA -->
+  <div id="action-area">
+    <div id="boot-panel" class="overlay-panel">
+      <div id="boot-title">Place Ante</div>
+      <div style="font-size:12px; color:#aaa; margin-bottom:10px;">Select chips to buy in</div>
+      <div id="boot-chips">
+        <div class="pchip bchip bc1" onclick="addBoot(1)">1</div>
+        <div class="pchip bchip bc5" onclick="addBoot(5)">5</div>
+        <div class="pchip bchip bc10" onclick="addBoot(10)">10</div>
+        <div class="pchip bchip bc25" onclick="addBoot(25)">25</div>
+        <div class="pchip bchip bc50" onclick="addBoot(50)">50</div>
+        <div class="pchip bchip bc100" onclick="addBoot(100)">100</div>
+      </div>
+      <div id="boot-total">₹0</div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button class="btn bf" onclick="clearBoot()" style="flex:0.4;">Clear</button>
+        <button class="btn bdeal" onclick="confirmBoot()">Deal Cards</button>
+      </div>
+    </div>
+
+    <div id="raise-panel" class="overlay-panel">
+      <div style="font-family:'Playfair Display'; font-size:18px; color:#fff; margin-bottom:10px;">Slide to Raise</div>
+      <div id="raise-disp">₹20</div>
+      <input type="range" id="raise-slider" min="10" max="500" step="5" value="20" oninput="onRaiseSlider()">
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+        <button class="btn bf" onclick="closeRaise()">Cancel</button>
+        <button class="btn br" onclick="commitRaise()">Confirm</button>
+      </div>
+    </div>
+
+    <div id="wait-msg"><span class="dot-pulse">Opponent Thinking</span></div>
+    <div id="action-btns"></div>
+  </div>
+</div>
+
+<script>
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  try {
+    const ctx = AC; if (ctx.state === 'suspended') ctx.resume();
+    const g = ctx.createGain(); g.connect(ctx.destination);
+
+    if (type === 'chip') {
+      const osc1 = ctx.createOscillator(); osc1.type = 'square'; osc1.frequency.setValueAtTime(3000, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+      const osc2 = ctx.createOscillator(); osc2.type = 'triangle'; osc2.frequency.setValueAtTime(2000, ctx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.05);
+      g.gain.setValueAtTime(0.2, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+      osc1.connect(g); osc2.connect(g); osc1.start(); osc2.start(); osc1.stop(ctx.currentTime + 0.05); osc2.stop(ctx.currentTime+0.05);
+    } else if (type === 'deal') {
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+      g.gain.setValueAtTime(0.3, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.connect(g); osc.start(); osc.stop(ctx.currentTime + 0.15);
+    } else if (type === 'fold') {
+      const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, ctx.currentTime); osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 0.2);
+      g.gain.setValueAtTime(0.15, ctx.currentTime); g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.connect(g); osc.start(); osc.stop(ctx.currentTime + 0.2);
+    } else if (type === 'raise') {
+      [0, 0.1].forEach((t, i) => {
+        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = 523.25 * (i+1);
+        const gg = ctx.createGain(); gg.gain.setValueAtTime(0.15, ctx.currentTime + t);
+        gg.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + 0.2);
+        o.connect(gg); gg.connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.3);
+      });
+    } else if (type === 'win') {
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+      notes.forEach((freq, i) => {
+        const t = i * 0.08;
+        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+        const gg = ctx.createGain(); gg.gain.setValueAtTime(0.2, ctx.currentTime + t);
+        gg.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + t + 0.4);
+        o.connect(gg); gg.connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.5);
+      });
+    } else if (type === 'scan') {
+      // Searching radar sound
+      const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(100, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.08);
+      g.gain.setValueAtTime(0.03, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(g); osc.start(); osc.stop(ctx.currentTime + 0.08);
+    } else if (type === 'lock') {
+      // Player found chime
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.4);
+      g.gain.setValueAtTime(0.4, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(g); osc.start(); osc.stop(ctx.currentTime + 0.4);
+    }
+  } catch(e) {}
+}
+
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const RV = {2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14};
+const CHIP_COLS = ['#576574','#ee5253','#10ac84','#2e86de','#222f3e','#833471'];
+const AVATARS = [ {bg:'#2e86de',txt:'YOU'}, {bg:'#833471',txt:'PR'}, {bg:'#ee5253',txt:'RJ'}, {bg:'#10ac84',txt:'VK'} ];
+const PCONF = [ {name:'You',ai:false}, {name:'Priya',ai:true}, {name:'Raj',ai:true}, {name:'Vikram',ai:true} ];
+
+function mkDeck() {
+  let d = []; for (let s of SUITS) for (let r of RANKS) d.push({r, s});
+  for (let i = d.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d;
+}
+
+function evalHand(cards) {
+  const vals = cards.map(c => RV[c.r]); const suits = cards.map(c => c.s);
+  const isFlush = suits.every(s => s === suits[0]);
+  const sorted = [...vals].sort((a,b) => a - b);
+  const isSeq = (sorted[2]-sorted[0]===2 && new Set(sorted).size===3) || (sorted.join(',')==='2,3,14');
+  const cnt = {}; for (let v of vals) cnt[v] = (cnt[v]||0) + 1;
+  const grps = Object.values(cnt).sort((a,b) => b - a);
+  let finalVals = sorted.slice().reverse();
+  
+  // FIX: A-2-3 rule logic correctly ranks it just below A-K-Q
+  if (isSeq && sorted.join(',')==='2,3,14') finalVals = [13.5, 3, 2]; 
+  
+  if (isFlush && isSeq) return {rank:6, name:'Pure Sequence', vals:finalVals};
+  if (grps[0] === 3)    return {rank:5, name:'Trail (Set)', vals:finalVals};
+  if (isSeq)            return {rank:4, name:'Sequence', vals:finalVals};
+  if (isFlush)          return {rank:3, name:'Flush (Color)', vals:finalVals};
+  if (grps[0] === 2) {
+    const pv = +Object.keys(cnt).find(k => cnt[k]===2); const kv = +Object.keys(cnt).find(k => cnt[k]===1);
+    return {rank:2, name:'Pair', vals:[pv, pv, kv]};
+  }
+  return {rank:1, name:'High Card', vals:finalVals};
+}
+
+function cmpHands(a, b) {
+  if (a.rank !== b.rank) return a.rank - b.rank;
+  for (let i = 0; i < a.vals.length; i++) if (a.vals[i] !== b.vals[i]) return a.vals[i] - b.vals[i];
+  return 0;
+}
+
+function getAnchor(id) {
+  const el = document.getElementById(id); const ar = document.getElementById('app').getBoundingClientRect();
+  if(!el) return { x: window.innerWidth/2, y: window.innerHeight/2 };
+  const er = el.getBoundingClientRect(); return { x: er.left - ar.left + er.width/2, y: er.top - ar.top + er.height/2 };
+}
+
+// Improved hardware-accelerated chip tossing using Web Animations API
+function flyChips(fromIdx, amount, cb, winnerIdx = 0) {
+  const layer = document.getElementById('chip-layer');
+  const from = fromIdx === -1 ? getAnchor('pot-text-area') : getAnchor('s' + fromIdx);
+  const to = fromIdx === -1 ? getAnchor('s' + winnerIdx) : getAnchor('pot-text-area');
+  
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const n = Math.min(8, Math.max(2, Math.ceil(Math.log2(amount + 1))));
+  
+  let done = 0;
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      playSound('chip');
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'absolute'; wrapper.style.left = (from.x - 12) + 'px'; wrapper.style.top = (from.y - 12) + 'px';
+      
+      const ch = document.createElement('div');
+      ch.className = 'pchip'; ch.style.backgroundColor = CHIP_COLS[Math.floor(Math.random() * CHIP_COLS.length)];
+      
+      wrapper.appendChild(ch); layer.appendChild(wrapper);
+      
+      // X-Axis Linear Glide
+      wrapper.animate([
+        { transform: 'translateX(0px)' },
+        { transform: `translateX(${dx + (Math.random()-0.5)*20}px)` }
+      ], { duration: 600, easing: 'linear', fill: 'forwards' });
+
+      // Y-Axis Parabolic Arc + Scale
+      const yAnim = ch.animate([
+        { transform: 'translateY(0px) scale(1)', easing: 'ease-out' },
+        { transform: `translateY(${Math.min(-60, dy/2 - 60)}px) scale(1.5)`, offset: 0.5, easing: 'ease-in' },
+        { transform: `translateY(${dy + (Math.random()-0.5)*20}px) scale(0.8)` }
+      ], { duration: 600, fill: 'forwards' });
+
+      yAnim.onfinish = () => { wrapper.remove(); if (++done === n && cb) cb(); };
+    }, i * 70);
+  }
+}
+
+function updatePotChips(pot) {
+  const el = document.getElementById('pot-chips'); if (!pot) { el.innerHTML = ''; return; }
+  const vals = [100,50,25,10,5,1]; const cols = ['#833471','#222f3e','#2e86de','#10ac84','#ee5253','#576574'];
+  let rem = pot, html = '';
+  for (let i = 0; i < vals.length; i++) {
+    const n = Math.min(Math.floor(rem / vals[i]), 4); rem %= vals[i];
+    for (let j = 0; j < n; j++) html += `<div class="pchip" style="background-color:${cols[i]}"></div>`;
+  } el.innerHTML = html;
+}
+
+let G = {}; let pendingBoot = 0; let aiTimer = null;
+const DUMMY_NAMES = ["Guest_99", "ProGamer", "AceHigh", "Lucky7", "KingPin", "Maverick", "Shadow", "Vegas"];
+const DUMMY_COLS = ['#e17055', '#00b894', '#0984e3', '#fdcb6e', '#6c5ce7', '#d63031', '#2d3436'];
+
+function initG() {
+  G = {
+    round: 0, dealer: 3,
+    players: PCONF.map((p, i) => ({
+      idx: i, ...p, chips: (G.players ? G.players[i].chips : 5000),
+      hand: [], folded: false, seen: false, totalBet: 0, lastAct: ''
+    })),
+    pot: 0, boot: 0, currentBet: 0, phase: 'pre', turn: null, actionCount: 0
+  };
+}
+function alive() { return G.players.filter(p => !p.folded); }
+function callAmt(p) { return p.seen ? G.currentBet * 2 : G.currentBet; }
+
+function startApp() {
+  // Ensure AudioContext is unlocked
+  if (AC.state === 'suspended') AC.resume();
+  document.getElementById('intro-screen').style.opacity = 0;
+  setTimeout(() => {
+    document.getElementById('intro-screen').style.display = 'none';
+    startMatchmaking();
+  }, 500);
+}
+
+function startMatchmaking() {
+  const tcm = document.getElementById('table-center-msg');
+  tcm.style.display = 'flex'; setTimeout(() => tcm.style.opacity = '1', 50);
+
+  for(let i=0; i<4; i++) document.getElementById('s'+i).innerHTML = ''; // Clear seats
+  
+  // Staggered lock-in
+  spinSeat(0, 800); spinSeat(1, 2000); spinSeat(2, 3200); spinSeat(3, 4400);
+
+  setTimeout(() => {
+    tcm.style.opacity = '0';
+    setTimeout(() => { tcm.style.display = 'none'; showBootPhase(); }, 600);
+  }, 5000);
+}
+
+function spinSeat(idx, stopDelay) {
+  const el = document.getElementById('s' + idx);
+  
+  let spinInt = setInterval(() => {
+    playSound('scan');
+    const randName = DUMMY_NAMES[Math.floor(Math.random() * DUMMY_NAMES.length)];
+    const randCol = DUMMY_COLS[Math.floor(Math.random() * DUMMY_COLS.length)];
+    const randInit = randName.substring(0,2).toUpperCase();
+    
+    el.innerHTML = `
+      <div class="sbox is-spinning">
+        <div class="p-avatar" style="background:linear-gradient(135deg, ${randCol}, #111);">
+          <span style="color:#fff;">${randInit}</span>
+        </div>
+        <div class="p-name-row"><span class="p-name" style="color:#888;">Scanning...</span></div>
+      </div>`;
+  }, 90);
+
+  setTimeout(() => {
+    clearInterval(spinInt);
+    playSound('lock');
+    renderSeat(idx, false); 
+    const sbox = el.querySelector('.sbox');
+    if(sbox) { sbox.classList.add('is-turn'); setTimeout(() => sbox.classList.remove('is-turn'), 600); }
+    document.getElementById('tcm-status').textContent = `FOUND ${idx+1}/4 PLAYERS...`;
+  }, stopDelay);
+}
+
+function showBootPhase() {
+  G.phase = 'pre'; pendingBoot = 0;
+  document.getElementById('boot-panel').style.display = 'block';
+  document.getElementById('raise-panel').style.display = 'none';
+  document.getElementById('action-btns').innerHTML = '';
+  document.getElementById('wait-msg').style.display = 'none';
+  document.getElementById('boot-total').textContent = '₹0';
+  renderAll(); updateInfoBar();
+}
+
+function addBoot(v) {
+  if (pendingBoot + v > G.players[0].chips) return;
+  pendingBoot += v; document.getElementById('boot-total').textContent = '₹' + pendingBoot; playSound('chip');
+}
+function clearBoot() { pendingBoot = 0; document.getElementById('boot-total').textContent = '₹0'; }
+function confirmBoot() { if (pendingBoot < 1) return; document.getElementById('boot-panel').style.display = 'none'; startRound(pendingBoot); }
+
+function startRound(bootAmt) {
+  G.round++; G.boot = bootAmt; G.currentBet = bootAmt; G.dealer = (G.dealer + 1) % 4; G.pot = 0; G.phase = 'dealing'; G.actionCount = 0;
+  document.getElementById('result-layer').classList.remove('show');
+  
+  G.players.forEach(p => { p.hand = []; p.folded = false; p.seen = false; p.totalBet = 0; p.lastAct = ''; });
+  G.players.forEach(p => { const pay = Math.min(bootAmt, p.chips); p.chips -= pay; p.totalBet += pay; G.pot += pay; });
+  
+  renderAll(); updateInfoBar(); updatePotDisplay();
+  log(`Round ${G.round} Started — Ante ₹${bootAmt}`);
+
+  for (let i = 0; i < 4; i++) setTimeout(() => flyChips(i, bootAmt, null), i * 150);
+  setTimeout(() => updatePotDisplay(), 600);
+
+  const deck = mkDeck(); const hands = [[],[],[],[]];
+  for (let r = 0; r < 3; r++) for (let p = 0; p < 4; p++) hands[p].push(deck.pop());
+
+  let delay = 800;
+  for (let r = 0; r < 3; r++) {
+    for (let p = 0; p < 4; p++) {
+      const card = hands[p][r], pi = p;
+      setTimeout(() => {
+        G.players[pi].hand.push(card); renderSeat(pi, true); playSound('deal');
+      }, delay);
+      delay += 120;
+    }
+  }
+
+  setTimeout(() => {
+    G.phase = 'betting'; G.turn = (G.dealer + 1) % 4; updateInfoBar(); renderAll(); progressTurn();
+  }, delay + 300);
+}
+
+function progressTurn() {
+  if (G.phase !== 'betting') return;
+  const al = alive(); if (al.length <= 1) { endRound(al[0] || G.players[0]); return; }
+  const cur = G.players[G.turn]; if (cur.folded) { advanceTurn(); return; }
+
+  renderAll(); updateInfoBar();
+
+  if (cur.ai) {
+    document.getElementById('action-btns').innerHTML = ''; document.getElementById('wait-msg').style.display = 'block';
+    aiTimer = setTimeout(() => aiAct(cur), 1500 + Math.random() * 1000);
+  } else {
+    document.getElementById('wait-msg').style.display = 'none'; showHumanBtns();
+  }
+}
+
+function advanceTurn() {
+  G.actionCount++; const al = alive();
+  if (al.length <= 1) { endRound(al[0]); return; }
+  if (G.actionCount >= 30) { forceShowdown(); return; }
+  
+  let next = (G.turn + 1) % 4; let guard = 0;
+  while (G.players[next].folded) { next = (next + 1) % 4; if (++guard > 4) { endRound(alive()[0]); return; } }
+  G.turn = next; progressTurn();
+}
+
+function showHumanBtns() {
+  const me = G.players[0]; const ca = Math.min(callAmt(me), me.chips); const al = alive();
+  let html = `<button class="btn bc" onclick="doCall()">Call ₹${ca}</button>`;
+  html += `<button class="btn br" onclick="openRaise()">Raise</button>`;
+  if (!me.seen) html += `<button class="btn bs" onclick="doSee()">See Cards</button>`;
+  if (al.length === 2) html += `<button class="btn bsh" onclick="doSideshow()">Show ₹${ca}</button>`;
+  html += `<button class="btn bf" onclick="doFold()">Fold</button>`;
+  document.getElementById('action-btns').innerHTML = html;
+  document.getElementById('action-btns').style.display = 'flex';
+}
+
+function doCall() {
+  if (G.turn !== 0) return; const me = G.players[0]; const pay = Math.min(callAmt(me), me.chips);
+  me.chips -= pay; me.totalBet += pay; G.pot += pay; me.lastAct = `Called ₹${pay}`;
+  log(`You call ₹${pay}`); showToast(0, `CALL ₹${pay}`, 'toast-call');
+  flyChips(0, pay, () => updatePotDisplay());
+  document.getElementById('action-btns').innerHTML = ''; setTimeout(() => { updateInfoBar(); advanceTurn(); }, 600);
+}
+
+function doFold() {
+  if (G.turn !== 0) return;
+  playSound('fold'); G.players[0].folded = true; G.players[0].lastAct = 'Folded';
+  const seatEl = document.getElementById('s0'); seatEl.querySelectorAll('.card-wrapper').forEach(c => c.classList.add('fold-anim'));
+  log('You folded'); showToast(0, 'FOLD', 'toast-fold');
+  document.getElementById('action-btns').innerHTML = ''; setTimeout(() => { renderSeat(0); advanceTurn(); }, 500);
+}
+
+function doSee() {
+  if (G.turn !== 0) return; G.players[0].seen = true; playSound('deal');
+  log('You checked your cards'); showToast(0, 'SEEN', 'toast-see');
+  renderSeat(0); showHumanBtns();
+}
+
+function openRaise() {
+  const me = G.players[0]; const minR = me.seen ? G.currentBet * 4 : G.currentBet * 2;
+  const maxR = Math.min(me.chips, minR * 5); // Limit max raise to 5x
+  const sl = document.getElementById('raise-slider'); sl.min = minR; sl.max = maxR; sl.value = minR;
+  document.getElementById('raise-disp').textContent = '₹' + minR;
+  document.getElementById('raise-panel').style.display = 'block'; document.getElementById('action-btns').style.display = 'none';
+}
+function closeRaise() { document.getElementById('raise-panel').style.display = 'none'; document.getElementById('action-btns').style.display = 'flex'; }
+function onRaiseSlider() { document.getElementById('raise-disp').textContent = '₹' + document.getElementById('raise-slider').value; }
+function commitRaise() {
+  if (G.turn !== 0) return; const me = G.players[0];
+  const raw = parseInt(document.getElementById('raise-slider').value); const minR = me.seen ? G.currentBet * 4 : G.currentBet * 2;
+  const pay = Math.min(Math.max(raw, minR), me.chips);
+  me.chips -= pay; me.totalBet += pay; G.pot += pay; G.currentBet = me.seen ? Math.floor(pay/2) : pay; me.lastAct = `Raised ₹${pay}`;
+  log(`You raised to ₹${pay}`); showToast(0, `RAISE ₹${pay}`, 'toast-raise'); playSound('raise');
+  flyChips(0, pay, () => updatePotDisplay()); closeRaise(); document.getElementById('action-btns').innerHTML = '';
+  setTimeout(() => { updateInfoBar(); advanceTurn(); }, 600);
+}
+
+function doSideshow() {
+  const al = alive(); if (al.length !== 2) return;
+  const me = G.players[0]; const ca = Math.min(callAmt(me), me.chips);
+  me.chips -= ca; me.totalBet += ca; G.pot += ca; me.lastAct = `Paid ₹${ca} to Show`;
+  flyChips(0, ca, () => updatePotDisplay());
+
+  al.forEach(p => p.seen = true); const [a, b] = al;
+  const ha = evalHand(a.hand), hb = evalHand(b.hand);
+  const cmp = cmpHands(ha, hb); const winner = cmp > 0 ? a : b;
+  log('Showdown initiated!'); document.getElementById('action-btns').innerHTML = '';
+  setTimeout(() => endRound(winner), 1200);
+}
+
+function aiAct(p) {
+  if (G.phase !== 'betting' || p.folded) return;
+  const hr = evalHand(p.hand); const rank = hr.rank; const r = Math.random(); const ca = Math.min(callAmt(p), p.chips);
+
+  if (!p.seen && r < 0.4) { p.seen = true; log(`${p.name} checked cards`); showToast(p.idx, 'SEEN', 'toast-see'); renderSeat(p.idx); }
+
+  let action;
+  if (rank >= 5)      action = r < 0.7 ? 'raise' : 'call';
+  else if (rank === 4) action = r < 0.5 ? 'call' : r < 0.8 ? 'raise' : 'fold';
+  else if (rank === 3) action = r < 0.5 ? 'call' : r < 0.6 ? 'raise' : 'fold';
+  else if (rank === 2) action = r < 0.4 ? 'call' : 'fold';
+  else                 action = r < 0.15 ? 'call' : 'fold';
+
+  if (action === 'raise' && p.chips < G.currentBet * 3) action = 'call';
+  if (action === 'call' && ca > p.chips) action = 'fold';
+  if (p.chips <= 0) action = 'fold';
+
+  document.getElementById('wait-msg').style.display = 'none';
+
+  if (action === 'fold') {
+    playSound('fold'); p.folded = true; p.lastAct = 'Folded';
+    const seatEl = document.getElementById('s' + p.idx);
+    seatEl.querySelectorAll('.card-wrapper').forEach(c => c.classList.add('fold-anim'));
+    log(`${p.name} folded`); showToast(p.idx, 'FOLD', 'toast-fold');
+    setTimeout(() => { renderSeat(p.idx); advanceTurn(); }, 500);
+
+  } else if (action === 'raise') {
+    const rAmt = p.seen ? G.currentBet * 4 : G.currentBet * 2; const pay = Math.min(rAmt, p.chips);
+    p.chips -= pay; p.totalBet += pay; G.pot += pay; G.currentBet = p.seen ? Math.floor(pay/2) : pay; p.lastAct = `Raised ₹${pay}`;
+    log(`${p.name} raised ₹${pay}`); showToast(p.idx, `RAISE ₹${pay}`, 'toast-raise'); playSound('raise');
+    flyChips(p.idx, pay, () => updatePotDisplay()); renderSeat(p.idx); setTimeout(() => { updateInfoBar(); advanceTurn(); }, 600);
+  } else {
+    p.chips -= ca; p.totalBet += ca; G.pot += ca; p.lastAct = `Called ₹${ca}`;
+    log(`${p.name} called ₹${ca}`); showToast(p.idx, `CALL ₹${ca}`, 'toast-call');
+    flyChips(p.idx, ca, () => updatePotDisplay()); renderSeat(p.idx); setTimeout(() => { updateInfoBar(); advanceTurn(); }, 600);
+  }
+}
+
+function forceShowdown() {
+  const al = alive(); al.forEach(p => p.seen = true);
+  let best = null, winner = null;
+  for (let p of al) { const hr = evalHand(p.hand); if (!best || cmpHands(hr, best) > 0) { best = hr; winner = p; } }
+  log('Max rounds reached — Showdown!'); endRound(winner);
+}
+
+function endRound(winner) {
+  clearTimeout(aiTimer); G.phase = 'over'; 
+  G.players.forEach(p => p.seen = true); // Expose all
+  
+  winner.chips += G.pot;
+  const hr = evalHand(winner.hand); log(`${winner.name} wins ₹${G.pot}!`); playSound('win');
+  
+  renderAll(); updatePotDisplay(); hlHandRank(hr.rank);
+
+  let resCardsHTML = winner.hand.map(c => {
+    const red = c.s === '♥' || c.s === '♦';
+    return `<div class="card-wrapper" style="transform:none;">
+              <div class="card-face ${red?'red':''}" style="transform:rotateY(0deg);">
+                <div class="cr">${c.r}</div><div class="cs">${c.s}</div>
+              </div>
+            </div>`;
+  }).join('');
+
+  document.getElementById('rl-name').textContent = winner.name;
+  document.getElementById('rl-hand').textContent = hr.name;
+  document.getElementById('rl-pot').textContent = `Won ₹${G.pot}`;
+  document.getElementById('rl-cards').innerHTML = resCardsHTML;
+  setTimeout(() => document.getElementById('result-layer').classList.add('show'), 1000);
+
+  setTimeout(() => { 
+    document.getElementById('pot-chips').innerHTML = ''; // Hide pot chips as they fly away
+    flyChips(-1, G.pot, null, winner.idx); 
+  }, 400);
+
+  document.getElementById('action-btns').style.display = 'none';
+  document.getElementById('wait-msg').style.display = 'none';
+  document.getElementById('raise-panel').style.display = 'none';
+}
+
+function newRound() { document.getElementById('result-layer').classList.remove('show'); showBootPhase(); }
+function resetGame() { initG(); document.getElementById('result-layer').classList.remove('show'); showBootPhase(); }
+
+function renderSeat(idx, animLast) {
+  const p = G.players[idx]; const el = document.getElementById('s' + idx);
+  const isDealer = idx === G.dealer; const isTurn = idx === G.turn && G.phase === 'betting';
+  const faceDown = idx !== 0 && !p.seen; const av = AVATARS[idx];
+  const dealerBadge = isDealer ? `<span class="d-btn">D</span>` : '';
+
+  let badgeHTML = '';
+  if (p.folded) badgeHTML = `<span class="badge badge-fold">Folded</span>`;
+  else if (p.hand.length > 0) badgeHTML = p.seen ? `<span class="badge badge-seen">Seen</span>` : `<span class="badge badge-blind">Blind</span>`;
+
+  let cardsHTML = '';
+  if (p.hand.length > 0) {
+    p.hand.forEach((c, ci) => {
+      const isLast = animLast && ci === p.hand.length - 1;
+      const red = c.s === '♥' || c.s === '♦';
+      const flipCls = faceDown ? '' : 'seen-anim';
+      const dealCls = isLast ? 'deal-anim' : '';
+      
+      cardsHTML += `
+        <div class="card-wrapper ${dealCls} ${flipCls}">
+          <div class="card-back"></div>
+          <div class="card-face ${red?'red':''}">
+            <div class="cr">${c.r}</div><div class="cs">${c.s}</div>
+          </div>
+        </div>`;
+    });
+  } else { cardsHTML = `<div style="height:var(--card-h);width:100px"></div>`; }
+
+  // Generate mini bet chips visually
+  let miniChipsHtml = '';
+  if (p.totalBet > 0) {
+    let betCount = Math.min(5, Math.ceil(p.totalBet / 20));
+    for(let i=0; i<betCount; i++) miniChipsHtml += `<div class="mini-chip" style="background:${CHIP_COLS[i%CHIP_COLS.length]}"></div>`;
+  }
+
+  el.innerHTML = `
+    <div class="sbox${isTurn?' is-turn':''}${p.folded?' is-fold':''}">
+      <div class="p-avatar" style="background:linear-gradient(135deg, ${av.bg}, #111);">
+        <div class="timer-ring"></div>
+        <span>${av.txt}</span>
+      </div>
+      <div class="p-name-row"><span class="p-name">${p.name}</span>${dealerBadge}</div>
+      <div class="seat-cards">${cardsHTML}</div>
+      <div class="p-status-row">${badgeHTML}</div>
+      <div class="p-chips">₹${p.chips}</div>
+      <div class="p-bet">${p.totalBet > 0 ? 'Bet: ₹'+p.totalBet : ''} <div class="mini-chips-wrap">${miniChipsHtml}</div></div>
+      ${p.lastAct ? `<div class="p-act">${p.lastAct}</div>` : ''}
+    </div>`;
+}
+
+function renderAll() { for (let i = 0; i < 4; i++) renderSeat(i, false); }
+function updatePotDisplay() { document.getElementById('pot-amt').textContent = '₹' + G.pot; updatePotChips(G.pot); }
+function updateInfoBar() {
+  document.getElementById('ib-round').textContent = G.round || '—';
+  document.getElementById('ib-boot').textContent = G.boot ? '₹' + G.boot : '—';
+  document.getElementById('ib-minbet').textContent = G.currentBet ? '₹' + G.currentBet : '—';
+}
+function hlHandRank(rank) {
+  document.querySelectorAll('.hr-row').forEach(el => {
+    el.classList.remove('hl');
+    if (parseInt(el.id.replace('hr','')) === rank) el.classList.add('hl');
+  });
+}
+
+function log(msg) {
+  const tel = document.getElementById('on-table-log');
+  const td = document.createElement('div'); td.className = 'tlog-entry'; td.textContent = msg;
+  tel.appendChild(td); setTimeout(() => { if(td.parentNode) td.remove(); }, 2500);
+  while (tel.children.length > 2) tel.removeChild(tel.firstChild);
+  
+  const sel = document.getElementById('log-list');
+  if(sel) {
+    const sd = document.createElement('div'); sd.className = 'log-entry'; sd.textContent = msg;
+    sel.insertBefore(sd, sel.firstChild);
+    while (sel.children.length > 15) sel.removeChild(sel.lastChild);
+  }
+}
+
+function showToast(seatIdx, text, cls) {
+  const layer = document.getElementById('toast-layer');
+  const from = getAnchor('s' + seatIdx);
+  const t = document.createElement('div'); t.className = `action-toast`; t.textContent = text;
+  
+  if(cls === 'toast-call') { t.style.background = 'rgba(9, 132, 227, 0.9)'; }
+  if(cls === 'toast-raise') { t.style.background = 'rgba(211, 84, 0, 0.9)'; }
+  if(cls === 'toast-fold') { t.style.background = 'rgba(214, 48, 49, 0.9)'; }
+  if(cls === 'toast-see') { t.style.background = 'rgba(108, 92, 231, 0.9)'; }
+
+  t.style.left = from.x + 'px'; t.style.top = from.y + 'px'; t.style.transform = 'translate(-50%,-50%)';
+  layer.appendChild(t);
+  t.addEventListener('animationend', () => t.remove());
+}
+
+initG();
+</script>
+</body>
+</html>

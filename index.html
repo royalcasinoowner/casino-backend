@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Casino Hub - Premium Betting Portal</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-dark: #07060f;
+            --bg-panel: rgba(18, 15, 34, 0.75);
+            --border-purple: rgba(139, 92, 246, 0.25);
+            --border-purple-glow: rgba(139, 92, 246, 0.6);
+            --text-main: #f3f1f7;
+            --text-dim: #a19bb8;
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.5);
+            --accent-crimson: #ef4444;
+            --accent-violet: #8b5cf6;
+            --accent-green: #10b981;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Star particles canvas container */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-purple);
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(139, 92, 246, 0.35);
+            box-shadow: 0 15px 50px 0 rgba(139, 92, 246, 0.12);
+        }
+
+        .neon-text-gold {
+            text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .neon-text-purple {
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+        }
+
+        .game-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(7, 6, 15, 0.95) 100%);
+            z-index: 1;
+        }
+
+        .game-card-spinner {
+            background-image: 
+                radial-gradient(circle at top right, rgba(239, 68, 68, 0.15), transparent 55%),
+                linear-gradient(135deg, #1b0c16 0%, #080309 100%);
+        }
+
+        .game-card-matka {
+            background-image: 
+                radial-gradient(circle at top right, rgba(139, 92, 246, 0.2), transparent 55%),
+                linear-gradient(135deg, #0e122b 0%, #050614 100%);
+        }
+
+        .game-card-mines {
+            background-image: 
+                radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 55%),
+                linear-gradient(135deg, #0a1f14 0%, #040d09 100%);
+        }
+
+        .game-card-aviator {
+            background-image: 
+                radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 55%),
+                linear-gradient(135deg, #071a2b 0%, #020a12 100%);
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--card-glow-border);
+            box-shadow: 0 20px 45px 0 var(--card-glow-shadow);
+        }
+
+        .game-card-spinner:hover {
+            --card-glow-border: rgba(239, 68, 68, 0.4);
+            --card-glow-shadow: rgba(239, 68, 68, 0.15);
+        }
+
+        .game-card-matka:hover {
+            --card-glow-border: rgba(139, 92, 246, 0.4);
+            --card-glow-shadow: rgba(139, 92, 246, 0.15);
+        }
+
+        .game-card-mines:hover {
+            --card-glow-border: rgba(16, 185, 129, 0.4);
+            --card-glow-shadow: rgba(16, 185, 129, 0.15);
+        }
+
+        .game-card-aviator:hover {
+            --card-glow-border: rgba(56, 189, 248, 0.45);
+            --card-glow-shadow: rgba(56, 189, 248, 0.18);
+        }
+
+        @keyframes plane-fly {
+            0%   { transform: translateX(-6px) translateY(3px) rotate(-8deg); }
+            50%  { transform: translateX(6px)  translateY(-3px) rotate(8deg); }
+            100% { transform: translateX(-6px) translateY(3px) rotate(-8deg); }
+        }
+        .plane-icon-anim {
+            animation: plane-fly 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        .game-btn {
+            z-index: 2;
+            position: relative;
+            background: linear-gradient(90deg, var(--btn-grad-start) 0%, var(--btn-grad-end) 100%);
+            transition: all 0.3s;
+        }
+
+        .game-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 25px var(--btn-glow);
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 3px;
+        }
+
+        /* Chat feed animation */
+        .chat-bubble {
+            animation: slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Language Card Hover styling */
+        .lang-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            background: rgba(25, 20, 48, 0.5);
+        }
+        .lang-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-violet);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Auth Tabs active states */
+        .auth-tab.active {
+            border-color: var(--accent-violet);
+            color: var(--accent-violet);
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-6 md:p-8 relative min-h-screen">
+
+    <!-- Backdrop Particle Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- First Time Language Selection Overlay -->
+    <div id="language-prompt-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md hidden">
+        <div class="glass-panel p-8 sm:p-12 max-w-2xl w-full mx-4 border-2 border-purple-500/40 text-center relative overflow-hidden">
+            <div class="absolute -top-12 -left-12 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl"></div>
+            
+            <div class="mb-6">
+                <i class="fa-solid fa-earth-asia text-5xl text-purple-400 mb-2 glow-text-purple"></i>
+                <h2 class="text-3xl font-extrabold tracking-tight uppercase">Choose Language / भाषा चुनें</h2>
+                <p class="text-xs text-purple-400 font-semibold tracking-wider mt-1 uppercase">Select your preferred localization</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+                <div onclick="setFirstTimeLanguage('en')" class="lang-card p-4 rounded-xl text-center">
+                    <div class="font-extrabold text-base text-white">English</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Default International</div>
+                </div>
+                <div onclick="setFirstTimeLanguage('hi')" class="lang-card p-4 rounded-xl text-center">
+                    <div class="font-extrabold text-base text-white">हिंदी</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Hindi Translation</div>
+                </div>
+                <div onclick="setFirstTimeLanguage('mr')" class="lang-card p-4 rounded-xl text-center">
+                    <div class="font-extrabold text-base text-white">मराठी</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Marathi Translation</div>
+                </div>
+                <div onclick="setFirstTimeLanguage('kn')" class="lang-card p-4 rounded-xl text-center">
+                    <div class="font-extrabold text-base text-white">ಕನ್ನಡ</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Kannada Translation</div>
+                </div>
+                <div onclick="setFirstTimeLanguage('ml')" class="lang-card p-4 rounded-xl text-center">
+                    <div class="font-extrabold text-base text-white">മലയാളം</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Malayalam Translation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authenticated Login/Signup Tabbed Screen Overlay -->
+    <div id="auth-screen" class="fixed inset-0 z-40 flex items-center justify-center bg-black/90 backdrop-blur-md hidden">
+        <div class="glass-panel p-6 sm:p-10 max-w-md w-full mx-4 border-2 border-purple-500/40 relative overflow-hidden">
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-purple-600/30 rounded-full blur-3xl"></div>
+
+            <!-- Logo -->
+            <div class="text-center mb-6">
+                <span class="text-xs text-purple-400 font-extrabold tracking-widest uppercase block mb-1" id="tr-portal-sub">Unified Betting Gateway</span>
+                <h2 class="text-3xl font-black tracking-tight" id="tr-welcome">ROYAL CASINO</h2>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-purple-500/10 mb-6 font-bold text-sm">
+                <button onclick="switchAuthTab('signin')" id="tab-signin" class="auth-tab flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 transition-all uppercase tracking-wider active">
+                    Sign In
+                </button>
+                <button onclick="switchAuthTab('signup')" id="tab-signup" class="auth-tab flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 transition-all uppercase tracking-wider">
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- Forms -->
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-extrabold uppercase text-slate-400 mb-1.5 block tracking-wider" id="tr-lbl-username">Username</label>
+                    <input type="text" id="auth-username" placeholder="e.g. VegasKing" maxlength="15"
+                        class="w-full bg-[#120f24] border border-[#2e2954] rounded-xl px-4 py-3 text-white placeholder-slate-700 outline-none focus:border-purple-500 transition-all font-semibold text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-extrabold uppercase text-slate-400 mb-1.5 block tracking-wider" id="tr-lbl-password">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••"
+                        class="w-full bg-[#120f24] border border-[#2e2954] rounded-xl px-4 py-3 text-white placeholder-slate-700 outline-none focus:border-purple-500 transition-all font-semibold text-sm">
+                </div>
+                
+                <div id="auth-error" class="text-xs text-rose-400 font-bold hidden bg-rose-950/20 border border-rose-900/30 p-3 rounded-lg">
+                    Error message goes here
+                </div>
+
+                <button id="auth-submit-btn" onclick="submitAuthForm()"
+                    class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold py-4 rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all text-white tracking-wide uppercase text-xs">
+                    Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Lobby Workspace -->
+    <div id="lobby-workspace" class="relative z-10 max-w-7xl mx-auto space-y-6 hidden">
+        
+        <!-- Header Panel -->
+        <div class="glass-panel px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-600 w-10 h-10 rounded-xl flex items-center justify-center border border-purple-500/30 shadow-lg">
+                    <i class="fa-solid fa-crown text-lg text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight leading-none flex items-center gap-2">
+                        ROYAL <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent font-extrabold">CASINO</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mt-1" id="tr-header-sub">Stellar Betting Portal</p>
+                </div>
+            </div>
+
+            <!-- Middle counts -->
+            <div class="flex items-center gap-6 bg-black/35 border border-purple-500/10 rounded-full px-6 py-2.5">
+                <div class="text-center px-2">
+                    <div class="text-[9px] text-slate-500 uppercase font-extrabold tracking-wider" id="tr-stats-online">Active Players</div>
+                    <div id="stats-online-count" class="text-sm font-black text-purple-400">0</div>
+                </div>
+                <div class="h-6 w-px bg-purple-500/20"></div>
+                <div class="text-center px-2">
+                    <div class="text-[9px] text-slate-500 uppercase font-extrabold tracking-wider" id="tr-stats-status">Lobby Status</div>
+                    <div class="text-xs font-bold text-emerald-400 flex items-center gap-1.5 justify-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> <span id="tr-live-lbl">Live</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Switcher globe dropdown & User profile wallet -->
+            <div class="flex items-center flex-wrap justify-center gap-4">
+                <!-- Global Language Dropdown -->
+                <div class="relative">
+                    <select id="lang-header-select" onchange="changeHeaderLanguage(this.value)" 
+                        class="bg-[#17142b] border border-purple-500/20 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none focus:border-purple-500 cursor-pointer">
+                        <option value="en">🌐 EN</option>
+                        <option value="hi">🌐 HI</option>
+                        <option value="mr">🌐 MR</option>
+                        <option value="kn">🌐 KN</option>
+                        <option value="ml">🌐 ML</option>
+                    </select>
+                </div>
+
+                <!-- Admin Link -->
+                <a href="/admin.html" id="admin-panel-link" class="hidden text-xs bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-3 py-1.5 rounded-lg uppercase tracking-wider transition-colors">
+                    Admin Panel
+                </a>
+
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-400 uppercase font-semibold" id="tr-lbl-wallet">Unified Wallet</div>
+                    <div class="text-xl font-black text-amber-400 flex items-center gap-1.5 justify-end">
+                        <span id="user-balance">10,000</span>
+                        <i class="fa-solid fa-coins text-sm text-amber-500"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 bg-[#17142b] border border-purple-500/20 px-3 py-1.5 rounded-xl">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=U&background=8b5cf6&color=fff" class="w-8 h-8 rounded-lg border border-purple-500/30">
+                    <div class="text-left">
+                        <span id="user-name-display" class="font-extrabold text-sm text-slate-200 block leading-tight">Guest</span>
+                        <button onclick="logoutSession()" class="text-[8px] text-purple-400 hover:text-purple-300 font-bold uppercase tracking-wider block" id="tr-logout-btn">Log Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Info board -->
+        <div class="glass-panel p-6 sm:p-10 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-500/15">
+            <div class="absolute right-0 top-0 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="max-w-2xl space-y-3 z-10 text-center md:text-left">
+                <span class="bg-purple-600/20 text-purple-400 text-[10px] px-3 py-1 rounded-full border border-purple-500/30 uppercase font-extrabold tracking-widest inline-block" id="tr-banner-badge">APEX BETTING PLATFORM</span>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight" id="tr-banner-title">The Next Generation of Casino Games</h2>
+                <p class="text-slate-400 text-xs sm:text-sm leading-relaxed max-w-lg" id="tr-banner-desc">
+                    Experience fully transparent, provably fair betting rooms. Play in real-time alongside thousands of players and chat as the cards shuffle and wheels spin.
+                </p>
+            </div>
+            
+            <div class="z-10 flex flex-col gap-2.5 min-w-[200px] w-full sm:w-auto">
+                <div class="bg-black/35 border border-purple-500/10 rounded-xl px-5 py-4 text-center">
+                    <div class="text-[9px] text-slate-400 uppercase font-extrabold tracking-widest" id="tr-jackpot-lbl">Active Jackpot Pool</div>
+                    <div class="text-2xl font-black text-amber-400 mt-1 glow-text-gold flex items-center justify-center gap-1.5 animate-pulse">
+                        <span id="jackpot-counter">142,500</span> <i class="fa-solid fa-coins text-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Games Columns and Chat drawer -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Games Grid -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex justify-between items-center px-2">
+                    <h3 class="text-base font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-2" id="tr-arena-title">
+                        <i class="fa-solid fa-gamepad"></i> Game Arena
+                    </h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    
+                    <!-- Game 1: Casino Spin -->
+                    <div class="game-card game-card-spinner p-6 h-[360px] flex flex-col justify-between">
+                        <div class="z-10 flex justify-between items-start">
+                            <span class="bg-rose-500/20 text-rose-400 text-[9px] px-2.5 py-1 rounded-full border border-rose-500/30 uppercase font-extrabold tracking-widest" id="tr-game1-badge">MULTIPLAYER SPIN</span>
+                            <div class="text-right">
+                                <div class="text-[9px] text-slate-500 font-extrabold uppercase" id="tr-payout-lbl-1">Payout</div>
+                                <div class="text-sm font-black text-rose-400 uppercase">Up to 14x</div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 flex items-center justify-center my-2">
+                            <div class="w-20 h-20 rounded-full border-4 border-dashed border-rose-500/20 flex items-center justify-center animate-spin" style="animation-duration: 25s;">
+                                <i class="fa-solid fa-dharmachakra text-3xl text-rose-500/50"></i>
+                            </div>
+                        </div>
+
+                        <div class="z-10 space-y-4">
+                            <div>
+                                <h4 class="text-lg font-extrabold tracking-tight" id="tr-game1-title">Royal Spinner</h4>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed" id="tr-game1-desc">
+                                    Classic casino roulette. Place bets on Red (x2), Black (x2), or Green (x14) and watch the royal wheel spin in real time.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-[10px] text-rose-400/80 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users text-xs"></i> <span id="spinner-room-count">0</span> <span id="tr-active-users-count-1">Active Players</span>
+                                </span>
+                                <a href="/games/casino-spin.html" id="tr-play-btn-1"
+                                    style="--btn-grad-start: #f43f5e; --btn-grad-end: #be123c; --btn-glow: rgba(244, 63, 94, 0.45);"
+                                    class="game-btn px-5 py-2.5 rounded-xl text-xs font-extrabold text-white uppercase tracking-wider">
+                                    Play Spinner
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game 2: Matka Poker -->
+                    <div class="game-card game-card-matka p-6 h-[360px] flex flex-col justify-between">
+                        <div class="z-10 flex justify-between items-start">
+                            <span class="bg-purple-500/20 text-purple-400 text-[9px] px-2.5 py-1 rounded-full border border-purple-500/30 uppercase font-extrabold tracking-widest" id="tr-game2-badge">11 CARD DECK</span>
+                            <div class="text-right">
+                                <div class="text-[9px] text-slate-500 font-extrabold uppercase" id="tr-payout-lbl-2">Payout</div>
+                                <div class="text-sm font-black text-purple-400 uppercase">3.5x payout</div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 flex items-center justify-center my-2">
+                            <div class="flex gap-1.5">
+                                <div class="w-6 h-9 bg-white rounded border border-slate-300 flex items-center justify-center text-[10px] font-black text-purple-500 shadow rotate-[-8deg] translate-x-2">A♠</div>
+                                <div class="w-6 h-9 bg-white rounded border border-slate-300 flex items-center justify-center text-[10px] font-black text-rose-500 shadow z-10 scale-110">K♥</div>
+                                <div class="w-6 h-9 bg-white rounded border border-slate-300 flex items-center justify-center text-[10px] font-black text-amber-500 shadow rotate-[8deg] -translate-x-2">Q♦</div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 space-y-4">
+                            <div>
+                                <h4 class="text-lg font-extrabold tracking-tight" id="tr-game2-title">Matka Poker</h4>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed" id="tr-game2-desc">
+                                    Choose one of the 11 cards picked by the system. Shuffled in real-time, matching card awards a massive +250% reward multiplier.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-[10px] text-purple-400/80 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users text-xs"></i> <span id="matka-room-count">0</span> <span id="tr-active-users-count-2">Active Players</span>
+                                </span>
+                                <a href="/games/matka.html" id="tr-play-btn-2"
+                                    style="--btn-grad-start: #8b5cf6; --btn-grad-end: #6d28d9; --btn-glow: rgba(139, 92, 246, 0.45);"
+                                    class="game-btn px-5 py-2.5 rounded-xl text-xs font-extrabold text-white uppercase tracking-wider">
+                                    Play Matka
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game 3: Mine Sweeper -->
+                    <div class="game-card game-card-mines p-6 h-[360px] flex flex-col justify-between">
+                        <div class="z-10 flex justify-between items-start">
+                            <span class="bg-emerald-500/20 text-emerald-400 text-[9px] px-2.5 py-1 rounded-full border border-emerald-500/30 uppercase font-extrabold tracking-widest">SINGLE PLAYER</span>
+                            <div class="text-right">
+                                <div class="text-[9px] text-slate-500 font-extrabold uppercase">Payout</div>
+                                <div class="text-sm font-black text-emerald-400 uppercase">Variable</div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 flex items-center justify-center my-2">
+                            <div class="flex gap-2">
+                                <div class="w-12 h-12 bg-emerald-500/10 rounded-xl border border-emerald-500/30 flex items-center justify-center rotate-[-12deg] shadow backdrop-blur-sm">
+                                    <i class="fa-solid fa-gem text-emerald-400 text-xl"></i>
+                                </div>
+                                <div class="w-12 h-12 bg-rose-500/10 rounded-xl border border-rose-500/30 flex items-center justify-center translate-y-3 z-10 shadow backdrop-blur-sm">
+                                    <i class="fa-solid fa-bomb text-rose-400 text-xl"></i>
+                                </div>
+                                <div class="w-12 h-12 bg-amber-500/10 rounded-xl border border-amber-500/30 flex items-center justify-center rotate-[12deg] shadow backdrop-blur-sm">
+                                    <i class="fa-solid fa-coins text-amber-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 space-y-4">
+                            <div>
+                                <h4 class="text-lg font-extrabold tracking-tight">Mine Sweeper</h4>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                    Clear the board without hitting a mine! Cash out at any time to secure your rising multiplier.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-[10px] text-emerald-400/80 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user text-xs"></i> <span>Solo Play</span>
+                                </span>
+                                <a href="/games/mines.html"
+                                    style="--btn-grad-start: #10b981; --btn-grad-end: #047857; --btn-glow: rgba(16, 185, 129, 0.45);"
+                                    class="game-btn px-5 py-2.5 rounded-xl text-xs font-extrabold text-white uppercase tracking-wider">
+                                    Play Mines
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game 4: Aviator Crash Game -->
+                    <div class="game-card game-card-aviator p-6 h-[360px] flex flex-col justify-between">
+                        <div class="z-10 flex justify-between items-start">
+                            <span class="bg-sky-500/20 text-sky-400 text-[9px] px-2.5 py-1 rounded-full border border-sky-500/30 uppercase font-extrabold tracking-widest">CRASH GAME</span>
+                            <div class="text-right">
+                                <div class="text-[9px] text-slate-500 font-extrabold uppercase">Payout</div>
+                                <div class="text-sm font-black text-sky-400 uppercase">Up to 5000x</div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 flex items-center justify-center my-2">
+                            <div class="relative flex items-center justify-center">
+                                <!-- Animated orbit ring -->
+                                <div class="absolute w-24 h-24 rounded-full border border-dashed border-sky-500/20 animate-spin" style="animation-duration: 20s;"></div>
+                                <!-- Multiplier glow orb -->
+                                <div class="w-14 h-14 rounded-full bg-sky-500/10 border border-sky-400/30 flex items-center justify-center backdrop-blur-sm shadow-lg" style="box-shadow: 0 0 24px rgba(56,189,248,0.25);">
+                                    <span class="plane-icon-anim text-3xl">✈️</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="z-10 space-y-4">
+                            <div>
+                                <h4 class="text-lg font-extrabold tracking-tight">Aviator</h4>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                                    Watch the multiplier climb and cash out before the plane flies away! The longer you wait, the bigger the risk — and the reward.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-[10px] text-sky-400/80 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user text-xs"></i> <span>Solo Play</span>
+                                </span>
+                                <a href="/games/aviator.html"
+                                    style="--btn-grad-start: #0ea5e9; --btn-grad-end: #0369a1; --btn-glow: rgba(14, 165, 233, 0.45);"
+                                    class="game-btn px-5 py-2.5 rounded-xl text-xs font-extrabold text-white uppercase tracking-wider">
+                                    Play Aviator
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Chat & Payout Sidebar -->
+            <div class="space-y-6">
+                <!-- Chat panel tab -->
+                <div class="glass-panel p-5 flex flex-col h-[400px]">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-2" id="tr-chat-title">
+                            <i class="fa-solid fa-comments text-purple-400"></i> Global Chat
+                        </h3>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+
+                    <div id="chat-messages-container" class="flex-1 overflow-y-auto space-y-3 pr-1 mb-3">
+                        <div class="text-[10px] text-slate-500 italic text-center py-20" id="tr-chat-placeholder">No active messages</div>
+                    </div>
+
+                    <div class="relative bg-black/40 border border-purple-500/10 rounded-xl p-2 flex items-center">
+                        <input type="text" id="chat-input" placeholder="Type chat message..." maxlength="100"
+                            class="w-full bg-transparent border-none text-xs text-white placeholder-slate-700 outline-none focus:ring-0 px-2 py-1.5 font-semibold">
+                        <button id="send-chat-btn" class="bg-purple-600 hover:bg-purple-500 text-white w-7 h-7 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Big Winners -->
+                <div class="glass-panel p-5 flex flex-col h-[280px]">
+                    <h3 class="text-xs font-extrabold text-purple-300 uppercase tracking-wider mb-3 flex items-center gap-2" id="tr-wins-title">
+                        <i class="fa-solid fa-trophy text-purple-400"></i> Live Payout Board
+                    </h3>
+                    <div id="recent-wins-feed" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                        <div class="text-[10px] text-slate-500 italic text-center py-10" id="tr-wins-placeholder">No recent win notifications</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Provably Fair Explanation Panel -->
+        <div class="glass-panel p-6">
+            <h3 class="text-xs font-extrabold text-purple-300 uppercase tracking-wider mb-4 flex items-center gap-2" id="tr-trust-title">
+                <i class="fa-solid fa-shield-halved text-purple-400"></i> Trust & Security: Provably Fair Gaming
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400 leading-relaxed">
+                <div class="bg-black/25 border border-purple-500/5 rounded-xl p-4 space-y-2">
+                    <h4 class="font-extrabold text-slate-200 flex items-center gap-1.5" id="tr-fair1-title">
+                        1. SHA-256 Hashing
+                    </h4>
+                    <p id="tr-fair1-desc">
+                        Before a round begins, the server shuffles the deck/wheel and determines the winning outcome. It hashes this outcome with a random salt to hide the value.
+                    </p>
+                </div>
+                
+                <div class="bg-black/25 border border-purple-500/5 rounded-xl p-4 space-y-2">
+                    <h4 class="font-extrabold text-slate-200 flex items-center gap-1.5" id="tr-fair2-title">
+                        2. Bet Placement
+                    </h4>
+                    <p id="tr-fair2-desc">
+                        The generated SHA-256 hash is published immediately. Players place their bets knowing the outcome cannot be altered without changing the hash.
+                    </p>
+                </div>
+
+                <div class="bg-black/25 border border-purple-500/5 rounded-xl p-4 space-y-2">
+                    <h4 class="font-extrabold text-slate-200 flex items-center gap-1.5" id="tr-fair3-title">
+                        3. Verification
+                    </h4>
+                    <p id="tr-fair3-desc">
+                        At the end of the round, the secret salt is revealed. You can paste the outcome and salt into any SHA-256 converter and match it to verify the game was 100% fair.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-[10px] text-slate-600 uppercase tracking-widest pt-4 font-semibold pb-8">
+            &copy; 2026 Royal Casino Hub. All rights reserved. Play responsibly.
+        </div>
+
+    </div>
+
+    <!-- Scripts and Localization Systems -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Localization dictionaries
+        const TRANSLATIONS = {
+            en: {
+                welcome: "ROYAL CASINO",
+                portalSub: "Unified Betting Gateway",
+                headerSub: "Stellar Betting Portal",
+                statsOnline: "Active Players",
+                statsStatus: "Lobby Status",
+                liveLbl: "Live",
+                lblWallet: "Unified Wallet",
+                logoutBtn: "Log Out",
+                bannerBadge: "APEX BETTING PLATFORM",
+                bannerTitle: "The Next Generation of Casino Games",
+                bannerDesc: "Experience fully transparent, provably fair betting rooms. Play in real-time alongside thousands of players and chat as the cards shuffle and wheels spin.",
+                jackpotLbl: "Active Jackpot Pool",
+                arenaTitle: "Game Arena",
+                game1Badge: "MULTIPLAYER SPIN",
+                payoutLbl1: "Payout",
+                game1Title: "Royal Spinner",
+                game1Desc: "Classic casino roulette. Place bets on Red (x2), Black (x2), or Green (x14) and watch the royal wheel spin in real time.",
+                activeUsersCount1: "Active Players",
+                playBtn1: "Play Spinner",
+                game2Badge: "11 CARD DECK",
+                payoutLbl2: "Payout",
+                game2Title: "Matka Poker",
+                game2Desc: "Choose one of the 11 cards picked by the system. Shuffled in real-time, matching card awards a massive +250% reward multiplier.",
+                activeUsersCount2: "Active Players",
+                playBtn2: "Play Matka",
+                chatTitle: "Global Chat",
+                chatPlaceholder: "No active messages",
+                chatInputPlaceHolder: "Type chat message...",
+                winsTitle: "Live Payout Board",
+                winsPlaceholder: "No recent win notifications",
+                trustTitle: "Trust & Security: Provably Fair Gaming",
+                fair1Title: "1. SHA-256 Hashing",
+                fair1Desc: "Before a round begins, the server shuffles the deck/wheel and determines the winning outcome. It hashes this outcome with a random salt to hide the value.",
+                fair2Title: "2. Bet Placement",
+                fair2Desc: "The generated SHA-256 hash is published immediately. Players place their bets knowing the outcome cannot be altered without changing the hash.",
+                fair3Title: "3. Verification",
+                fair3Desc: "At the end of the round, the secret salt is revealed. You can paste the outcome and salt into any SHA-256 converter and match it to verify the game was 100% fair.",
+                lblUsername: "Username",
+                lblPassword: "Password",
+                submit: "Submit",
+                signin: "Sign In",
+                signup: "Sign Up"
+            },
+            hi: {
+                welcome: "रॉयल कैसीनो",
+                portalSub: "एकीकृत सट्टेबाजी पोर्टल",
+                headerSub: "स्टेलर बेटिंग पोर्टल",
+                statsOnline: "सक्रिय खिलाड़ी",
+                statsStatus: "लॉबी स्थिति",
+                liveLbl: "लाइव",
+                lblWallet: "एकीकृत वॉलेट",
+                logoutBtn: "लॉग आउट",
+                bannerBadge: "एपेक्स बेटिंग प्लेटफॉर्म",
+                bannerTitle: "कैसीनो खेलों की अगली पीढ़ी",
+                bannerDesc: "पूरी तरह से पारदर्शी, निष्पक्ष सट्टेबाजी कक्षों का अनुभव करें। हजारों खिलाड़ियों के साथ खेलें और चैट करें क्योंकि कार्ड शफल होते हैं और व्हील घूमते हैं।",
+                jackpotLbl: "सक्रिय जैकपॉट पूल",
+                arenaTitle: "खेल का अखाड़ा",
+                game1Badge: "मल्टीप्लेयर स्पिन",
+                payoutLbl1: "भुगतान",
+                game1Title: "रॉयल स्पिनर",
+                game1Desc: "क्लासिक कैसीनो रूले। लाल (x2), काले (x2), या हरे (x14) पर दांव लगाएं और वास्तविक समय में रॉयल व्हील को घूमते हुए देखें।",
+                activeUsersCount1: "सक्रिय खिलाड़ी",
+                playBtn1: "स्पिनर खेलें",
+                game2Badge: "11 कार्ड डेक",
+                payoutLbl2: "भुगतान",
+                game2Title: "मटका पोकर",
+                game2Desc: "सिस्टम द्वारा चुने गए 11 कार्डों में से एक कार्ड चुनें। शफल किया गया, मैचिंग कार्ड पर एक बड़ा +250% इनाम मिलता है।",
+                activeUsersCount2: "सक्रिय खिलाड़ी",
+                playBtn2: "मटका खेलें",
+                chatTitle: "वैश्विक चैट",
+                chatPlaceholder: "कोई सक्रिय संदेश नहीं",
+                chatInputPlaceHolder: "चैट संदेश लिखें...",
+                winsTitle: "लाइव भुगतान बोर्ड",
+                winsPlaceholder: "कोई हालिया जीत नहीं",
+                trustTitle: "विश्वास और सुरक्षा: निष्पक्ष गेमिंग",
+                fair1Title: "1. SHA-256 हैशिंग",
+                fair1Desc: "दौर शुरू होने से पहले, सर्वर डेक/व्हील को शफल करता है और जीतने वाले परिणाम को निर्धारित करता है। यह मूल्य को छिपाने के लिए परिणाम को हैश करता है।",
+                fair2Title: "2. दांव लगाना",
+                fair2Desc: "उत्पन्न SHA-256 हैश तुरंत प्रकाशित किया जाता है। खिलाड़ी यह जानते हुए अपना दांव लगाते हैं कि परिणाम को बदला नहीं जा सकता।",
+                fair3Title: "3. सत्यापन",
+                fair3Desc: "दौर के अंत में, गुप्त साल्ट प्रकट किया जाता है। आप परिणाम और साल्ट को पेस्ट कर सकते हैं और सत्यापित कर सकते हैं कि खेल 100% निष्पक्ष था।",
+                lblUsername: "यूज़रनेम",
+                lblPassword: "पासवर्ड",
+                submit: "सबमिट",
+                signin: "लॉग इन करें",
+                signup: "साइन अप करें"
+            },
+            mr: {
+                welcome: "रॉयल कॅसिनो",
+                portalSub: "एकत्रित बेटिंग पोर्टल",
+                headerSub: "स्टेलर बेटिंग पोर्टल",
+                statsOnline: "सक्रिय खेळाडू",
+                statsStatus: "लॉबी स्थिती",
+                liveLbl: "लाइव्ह",
+                lblWallet: "एकत्रित वॉलेट",
+                logoutBtn: "लॉग आउट",
+                bannerBadge: "एपेक्स बेटिंग प्लॅटफॉर्म",
+                bannerTitle: "कॅसिनो खेळांची पुढची पिढी",
+                bannerDesc: "पूर्णपणे पारदर्शक, सिद्ध निष्पक्ष बेटिंग रूमचा अनुभव घ्या. हजारो खेळाडूंसोबत खेळा आणि कार्ड शफल होताना आणि व्हील फिरताना चॅट करा.",
+                jackpotLbl: "सक्रिय जॅकपॉट पूल",
+                arenaTitle: "खेळ आखाडा",
+                game1Badge: "मल्टीप्लेयर स्पिन",
+                payoutLbl1: "पेआउट",
+                game1Title: "रॉयल स्पिनर",
+                game1Desc: "क्लासिक कॅसिनो रूले. लाल (x2), काळा (x2), किंवा हिरवा (x14) वर पैज लावा आणि रॉयल व्हील फिरताना पहा.",
+                activeUsersCount1: "सक्रिय खेळाडू",
+                playBtn1: "स्पिनर खेळा",
+                game2Badge: "11 पत्त्यांचा डेक",
+                payoutLbl2: "पेआउट",
+                game2Title: "मटका पोकर",
+                game2Desc: "सिस्टमने निवडलेल्या 11 पत्त्यांपैकी एक पत्ता निवडा. रिअल-टाइममध्ये शफल केलेले, जुळणाऱ्या पत्त्यावर प्रचंड +250% बक्षीस मिळते.",
+                activeUsersCount2: "सक्रिय खेळाडू",
+                playBtn2: "मटका खेळा",
+                chatTitle: "ग्लोबल चॅट",
+                chatPlaceholder: "कोणतेही संदेश नाहीत",
+                chatInputPlaceHolder: "चॅट संदेश लिहा...",
+                winsTitle: "लाइव्ह पेआउट बोर्ड",
+                winsPlaceholder: "अलीकडील विजयाच्या कोणत्याही सूचना नाहीत",
+                trustTitle: "विश्वास आणि सुरक्षा: निष्पक्ष गेमिंग",
+                fair1Title: "1. SHA-256 हॅशिंग",
+                fair1Desc: "फेरी सुरू होण्यापूर्वी, सर्व्हर निकाल ठरवतो. मूल्य लपवण्यासाठी तो एका यादृच्छिक साल्टसह हा निकाल हॅश करतो.",
+                fair2Title: "2. पैज लावणे",
+                fair2Desc: "व्युत्पन्न केलेला SHA-256 हॅश त्वरित प्रकाशित केला जातो. हॅश बदलल्याशिवाय निकाल बदलता येत नाही.",
+                fair3Title: "3. पडताळणी",
+                fair3Desc: "फेरीच्या शेवटी, गुप्त साल्ट उघड केला जातो. आपण निकाल आणि साल्ट कन्व्हर्टरमध्ये पेस्ट करून पडताळू शकता की खेळ १००% निष्पक्ष होता.",
+                lblUsername: "वापरकर्तानाव",
+                lblPassword: "पासवर्ड",
+                submit: "सबमिट करा",
+                signin: "लॉगिन करा",
+                signup: "साइन अप करा"
+            },
+            kn: {
+                welcome: "ರಾಯಲ್ ಕ್ಯಾಸಿನೊ",
+                portalSub: "ಸಂಯೋಜಿತ ಬೆಟ್ಟಿಂಗ್ ಪೋರ್ಟಲ್",
+                headerSub: "ಸ್ಟೆಲ್ಲರ್ ಬೆಟ್ಟಿಂಗ್ ಪೋರ್ಟಲ್",
+                statsOnline: "ಸಕ್ರಿಯ ಆಟಗಾರರು",
+                statsStatus: "ಲಾಬಿ ಸ್ಥಿತಿ",
+                liveLbl: "ಲೈವ್",
+                lblWallet: "ಸಂಯೋಜಿತ ವಾಲೆಟ್",
+                logoutBtn: "ಲಾಗ್ ಔಟ್",
+                bannerBadge: "ಅಪೆಕ್ಸ್ ಬೆಟ್ಟಿಂಗ್ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್",
+                bannerTitle: "ಕ್ಯಾಸಿನೊ ಆಟಗಳ ಮುಂದಿನ ಪೀಳಿಗೆ",
+                bannerDesc: "ಸಂಪೂರ್ಣವಾಗಿ ಪಾರದರ್ಶಕ, ನ್ಯಾಯೋಚಿತ ಬೆಟ್ಟಿಂಗ್ ಕೊಠಡಿಗಳನ್ನು ಅನುಭವಿಸಿ. ಕಾರ್ಡ್‌ಗಳು ಶಫಲ್ ಮತ್ತು ಚಕ್ರಗಳು ತಿರುಗುವಾಗ ಆಟಗಾರರೊಂದಿಗೆ ಚಾಟ್ ಮಾಡಿ.",
+                jackpotLbl: "ಸಕ್ರಿಯ ಜಾಕ್‌ಪಾಟ್ ಪೂಲ್",
+                arenaTitle: "ಗೇಮ್ ಅಖಾಡ",
+                game1Badge: "ಮಲ್ಟಿಪ್ಲೇಯರ್ ಸ್ಪಿನ್",
+                payoutLbl1: "ಪಾವತಿ",
+                game1Title: "ರಾಯಲ್ ಸ್ಪಿನ್ನರ್",
+                game1Desc: "ಕ್ಲಾಸಿಕ್ ಕ್ಯಾಸಿನೊ ರೂಲೆಟ್. ಕೆಂಪು (x2), ಕಪ್ಪು (x2), ಅಥವಾ ಹಸಿರು (x14) ಮೇಲೆ ಬೆಟ್ ಮಾಡಿ ಮತ್ತು ರಾಯಲ್ ಚಕ್ರವು ತಿರುಗುವುದನ್ನು ವೀಕ್ಷಿಸಿ.",
+                activeUsersCount1: "ಸಕ್ರಿಯ ಆಟಗಾರರು",
+                playBtn1: "ಸ್ಪಿನ್ನರ್ ಪ್ಲೇ ಮಾಡಿ",
+                game2Badge: "11 ಕಾರ್ಡ್ ಡೆಕ್",
+                payoutLbl2: "ಪಾವತಿ",
+                game2Title: "ಮಟ್ಕಾ ಪೋಕರ್",
+                game2Desc: "ಸಿಸ್ಟಮ್ ಆಯ್ಕೆ ಮಾಡಿದ 11 ಕಾರ್ಡ್‌ಗಳಲ್ಲಿ ಒಂದನ್ನು ಆರಿಸಿ. ಹೊಂದಾಣಿಕೆಯ ಕಾರ್ಡ್ ಹೊಂದಿದ್ದರೆ ಭಾರಿ +250% ಬಹುಮಾನ ಸಿಗುತ್ತದೆ.",
+                activeUsersCount2: "ಸಕ್ರಿಯ ಆಟಗಾರರು",
+                playBtn2: "ಮಟ್ಕಾ ಪ್ಲೇ ಮಾಡಿ",
+                chatTitle: "ಜಾಗತಿಕ ಚಾಟ್",
+                chatPlaceholder: "ಯಾವುದೇ ಸಕ್ರಿಯ ಸಂದೇಶಗಳಿಲ್ಲ",
+                chatInputPlaceHolder: "ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ...",
+                winsTitle: "ಲೈವ್ ಪೇಔಟ್ ಬೋರ್ಡ್",
+                winsPlaceholder: "ಇತ್ತೀಚಿನ ಗೆಲುವಿನ ಅಧಿಸೂಚನೆಗಳಿಲ್ಲ",
+                trustTitle: "ನಂಬಿಕೆ ಮತ್ತು ಭದ್ರತೆ: ನ್ಯಾಯೋಚಿತ ಗೇಮಿಂಗ್",
+                fair1Title: "1. SHA-256 ಹ್ಯಾಶಿಂಗ್",
+                fair1Desc: "ಸುತ್ತು ಪ್ರಾರಂಭವಾಗುವ ಮೊದಲು, ಸರ್ವರ್ ವಿಜೇತ ಫಲಿತಾಂಶವನ್ನು ನಿರ್ಧರಿಸುತ್ತದೆ. ಮೌಲ್ಯವನ್ನು ಮರೆಮಾಡಲು ಫಲಿತಾಂಶವನ್ನು ಯಾದೃಚ್ಛಿಕ ಸಾಲ್ಟ್‌ನೊಂದಿಗೆ ಹ್ಯಾಶ್ ಮಾಡುತ್ತದೆ.",
+                fair2Title: "2. ಬೆಟ್ ಹಾಕುವುದು",
+                fair2Desc: "ರಚಿಸಲಾದ SHA-256 ಹ್ಯಾಶ್ ಅನ್ನು ತಕ್ಷಣವೇ ಪ್ರಕಟಿಸಲಾಗುತ್ತದೆ. ಹ್ಯಾಶ್ ಬದಲಾಯಿಸದೆ ಫಲಿತಾಂಶವನ್ನು ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ ಎಂದು ಆಟಗಾರರು ಬೆಟ್ ಮಾಡುತ್ತಾರೆ.",
+                fair3Title: "3. ಪರಿಶೀಲನೆ",
+                fair3Desc: "ಸುತ್ತಿನ ಕೊನೆಯಲ್ಲಿ, ರಹಸ್ಯ ಸಾಲ್ಟ್ ಅನ್ನು ಬಹಿರಂಗಪಡಿಸಲಾಗುತ್ತದೆ. ಆಟವು 100% ನ್ಯಾಯೋಚಿತವಾಗಿದೆ ಎಂದು ಪರಿಶೀಲಿಸಲು ನೀವು ಫಲಿತಾಂಶ ಮತ್ತು ಸಾಲ್ಟ್ ಅನ್ನು ಪರಿಶೀಲಿಸಬಹುದು.",
+                lblUsername: "ಬಳಕೆದಾರಹೆಸರು",
+                lblPassword: "ಪಾಸ್‌ವರ್ಡ್",
+                submit: "ಸಲ್ಲಿಸು",
+                signin: "ಸೈನ್ ಇನ್ ಮಾಡಿ",
+                signup: "ಸೈನ್ ಅಪ್ ಮಾಡಿ"
+            },
+            ml: {
+                welcome: "റോയൽ കാസിനോ",
+                portalSub: "ഏകീകൃത ബെറ്റിംഗ് പോർട്ടൽ",
+                headerSub: "സ്റ്റെല്ലർ ബെറ്റിംഗ് പോർട്ടൽ",
+                statsOnline: "സജീവ കളിക്കാർ",
+                statsStatus: "ലോബി അവസ്ഥ",
+                liveLbl: "ലൈവ്",
+                lblWallet: "ഏകീകൃത വാലറ്റ്",
+                logoutBtn: "ലോഗ് ഔട്ട്",
+                bannerBadge: "അപെക്സ് ബെറ്റിംഗ് പ്ലാറ്റ്ഫോം",
+                bannerTitle: "കാസിനോ ഗെയിമുകളുടെ അടുത്ത തലമുറ",
+                bannerDesc: "പൂർണ്ണമായും സുതാര്യവും ന്യായവുമായ ബെറ്റിംഗ് റൂമുകൾ അനുഭവിക്കുക. ആയിരക്കണക്കിന് കളിക്കാർക്കൊപ്പം തത്സമയം കളിക്കുകയും ചാറ്റ് ചെയ്യുകയും ചെയ്യുക.",
+                jackpotLbl: "സജീവ ജാക്ക്പോട്ട് പൂൾ",
+                arenaTitle: "ഗെയിം അരീന",
+                game1Badge: "മൾട്ടിപ്ലെയർ സ്പിൻ",
+                payoutLbl1: "പേഔട്ട്",
+                game1Title: "റോയൽ സ്പിന്നർ",
+                game1Desc: "ക്ലാസിക് കാസിനോ റൗലറ്റ്. ചുവപ്പ് (x2), കറുപ്പ് (x2), അല്ലെങ്കിൽ പച്ച (x14) എന്നിവയിൽ ബെറ്റ് വെക്കുക, റോയൽ വീൽ തത്സമയം കറങ്ങുന്നത് കാണുക.",
+                activeUsersCount1: "സജീവ കളിക്കാർ",
+                playBtn1: "സ്പിന്നർ കളിക്കുക",
+                game2Badge: "11 കാർഡുകളുടെ ഡെക്ക്",
+                payoutLbl2: "പേഔട്ട്",
+                game2Title: "മട്ക പോക്കർ",
+                game2Desc: "സിസ്റ്റം തിരഞ്ഞെടുത്ത 11 കാർഡുകളിൽ നിന്ന് ഒരു കാർഡ് തിരഞ്ഞെടുക്കുക. മാച്ചിംഗ് കാർഡിന് വമ്പിച്ച +250% റിവാർഡ് മൾട്ടിപ്ലെയർ ലഭിക്കും.",
+                activeUsersCount2: "സജീവ കളിക്കാർ",
+                playBtn2: "മട്ക കളിക്കുക",
+                chatTitle: "ഗ്ലോബൽ ചാറ്റ്",
+                chatPlaceholder: "സന്ദേശങ്ങൾ ഒന്നുമില്ല",
+                chatInputPlaceHolder: "സന്ദേശം ടൈപ്പ് ചെയ്യുക...",
+                winsTitle: "ലൈവ് പേഔട്ട് ബോർഡ്",
+                winsPlaceholder: "സമീപകാല വിജയങ്ങളൊന്നുമില്ല",
+                trustTitle: "വിശ്വാസവും സുരക്ഷയും: പ്രൊവബ്ലി ഫെയർ ഗെയിമിംഗ്",
+                fair1Title: "1. SHA-256 ഹാഷിംഗ്",
+                fair1Desc: "ഒരു റൗണ്ട് ആരംഭിക്കുന്നതിന് മുമ്പ്, സെർവർ ഫലം നിർണ്ണയിക്കുന്നു. മൂല്യം മറയ്ക്കാൻ ഫലം ഒരു റാൻഡം സാൾട്ടുമായി ഹാഷ് ചെയ്യുന്നു.",
+                fair2Title: "2. ബെറ്റ് പ്ലേസ്മെന്റ്",
+                fair2Desc: "ഹാഷ് ഉടൻ തന്നെ പ്രസിദ്ധീകരിക്കും. ഹാഷ് മാറ്റാതെ ഫലം മാറ്റാൻ കഴിയില്ലെന്ന് അറിഞ്ഞാണ് കളിക്കാർ ബെറ്റ് വെക്കുന്നത്.",
+                fair3Title: "3. പരിശോധന",
+                fair3Desc: "റൗണ്ടിന്റെ അവസാനം, രഹസ്യ സാൾട്ട് വെളിപ്പെടുത്തും. ഗെയിം ന്യായമാണെന്ന് പരിശോധിക്കാൻ ഫലവും സാൾട്ടും പരിശോധിക്കാം.",
+                lblUsername: "ഉപയോക്തൃനാമം",
+                lblPassword: "പാസ്‌വേഡ്",
+                submit: "സമർപ്പിക്കുക",
+                signin: "ലോഗിൻ ചെയ്യുക",
+                signup: "സൈൻ അപ്പ് ചെയ്യുക"
+            }
+        };
+
+        const socket = io(); 
+        let myId = localStorage.getItem('PLAYER_UID') || '';
+        let myName = localStorage.getItem('PLAYER_NAME') || '';
+        let myBalance = 10000;
+        let currentLang = localStorage.getItem('PLAYER_LANG') || '';
+        let activeAuthTab = 'signin';
+
+        // Set up client localization
+        function localizePage() {
+            const lang = currentLang || 'en';
+            const t = TRANSLATIONS[lang];
+            if (!t) return;
+
+            document.getElementById('lang-header-select').value = lang;
+
+            // Direct mappings
+            document.getElementById('tr-welcome').textContent = t.welcome;
+            document.getElementById('tr-portal-sub').textContent = t.portalSub;
+            document.getElementById('tr-header-sub').textContent = t.headerSub;
+            document.getElementById('tr-stats-online').textContent = t.statsOnline;
+            document.getElementById('tr-stats-status').textContent = t.statsStatus;
+            document.getElementById('tr-live-lbl').textContent = t.liveLbl;
+            document.getElementById('tr-lbl-wallet').textContent = t.lblWallet;
+            document.getElementById('tr-logout-btn').textContent = t.logoutBtn;
+            document.getElementById('tr-banner-badge').textContent = t.bannerBadge;
+            document.getElementById('tr-banner-title').textContent = t.bannerTitle;
+            document.getElementById('tr-banner-desc').textContent = t.bannerDesc;
+            document.getElementById('tr-jackpot-lbl').textContent = t.jackpotLbl;
+            document.getElementById('tr-arena-title').textContent = t.arenaTitle;
+            document.getElementById('tr-game1-badge').textContent = t.game1Badge;
+            document.getElementById('tr-payout-lbl-1').textContent = t.payoutLbl1;
+            document.getElementById('tr-game1-title').textContent = t.game1Title;
+            document.getElementById('tr-game1-desc').textContent = t.game1Desc;
+            document.getElementById('tr-active-users-count-1').textContent = t.activeUsersCount1;
+            document.getElementById('tr-play-btn-1').textContent = t.playBtn1;
+            document.getElementById('tr-game2-badge').textContent = t.game2Badge;
+            document.getElementById('tr-payout-lbl-2').textContent = t.payoutLbl2;
+            document.getElementById('tr-game2-title').textContent = t.game2Title;
+            document.getElementById('tr-game2-desc').textContent = t.game2Desc;
+            document.getElementById('tr-active-users-count-2').textContent = t.activeUsersCount2;
+            document.getElementById('tr-play-btn-2').textContent = t.playBtn2;
+            document.getElementById('tr-chat-title').textContent = t.chatTitle;
+            document.getElementById('tr-wins-title').textContent = t.winsTitle;
+            document.getElementById('tr-trust-title').textContent = t.trustTitle;
+            document.getElementById('tr-fair1-title').textContent = t.fair1Title;
+            document.getElementById('tr-fair1-desc').textContent = t.fair1Desc;
+            document.getElementById('tr-fair2-title').textContent = t.fair2Title;
+            document.getElementById('tr-fair2-desc').textContent = t.fair2Desc;
+            document.getElementById('tr-fair3-title').textContent = t.fair3Title;
+            document.getElementById('tr-fair3-desc').textContent = t.fair3Desc;
+
+            document.getElementById('tr-lbl-username').textContent = t.lblUsername;
+            document.getElementById('tr-lbl-password').textContent = t.lblPassword;
+            document.getElementById('auth-submit-btn').textContent = t.submit;
+            document.getElementById('tab-signin').textContent = t.signin;
+            document.getElementById('tab-signup').textContent = t.signup;
+
+            // Placeholders
+            document.getElementById('chat-input').placeholder = t.chatInputPlaceHolder;
+            const chatEmpty = document.getElementById('tr-chat-placeholder');
+            if (chatEmpty) chatEmpty.textContent = t.chatPlaceholder;
+            const winsEmpty = document.getElementById('tr-wins-placeholder');
+            if (winsEmpty) winsEmpty.textContent = t.winsPlaceholder;
+        }
+
+        // Initialize portal entry
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!currentLang) {
+                // First-time language selector trigger
+                document.getElementById('language-prompt-screen').classList.remove('hidden');
+            } else {
+                localizePage();
+                checkAuthentication();
+            }
+
+            initParticles();
+        });
+
+        function setFirstTimeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('PLAYER_LANG', lang);
+            document.getElementById('language-prompt-screen').classList.add('hidden');
+            localizePage();
+            checkAuthentication();
+        }
+
+        function changeHeaderLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('PLAYER_LANG', lang);
+            localizePage();
+        }
+
+        function checkAuthentication() {
+            if (!myName) {
+                document.getElementById('auth-screen').classList.remove('hidden');
+            } else {
+                initLobbySocket();
+            }
+        }
+
+        // Tabs switcher signin/signup
+        function switchAuthTab(tab) {
+            activeAuthTab = tab;
+            document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            // Clear fields & error
+            document.getElementById('auth-username').value = '';
+            document.getElementById('auth-password').value = '';
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+        switchAuthTab('signin');
+
+        // Submit registration/login credentials
+        function submitAuthForm() {
+            const user = document.getElementById('auth-username').value.trim();
+            const pass = document.getElementById('auth-password').value;
+            const errorBox = document.getElementById('auth-error');
+
+            if (!user || !pass) {
+                errorBox.textContent = "Please fill in all fields.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            if (activeAuthTab === 'signup') {
+                socket.emit('register', { username: user, password: pass }, (res) => {
+                    if (!res.success) {
+                        errorBox.textContent = res.error;
+                        errorBox.classList.remove('hidden');
+                    } else {
+                        // Switch to signin automatically after signup success
+                        alert("Account registered successfully! Please Sign In.");
+                        switchAuthTab('signin');
+                    }
+                });
+            } else {
+                socket.emit('login', { username: user, password: pass }, (res) => {
+                    if (!res.success) {
+                        errorBox.textContent = res.error;
+                        errorBox.classList.remove('hidden');
+                    } else {
+                        myName = res.name;
+                        myId = res.uid;
+                        localStorage.setItem('PLAYER_NAME', myName);
+                        localStorage.setItem('PLAYER_UID', myId);
+
+                        // If admin logged in, show admin panel links
+                        if (res.role === 'admin') {
+                            document.getElementById('admin-panel-link').classList.remove('hidden');
+                        }
+
+                        document.getElementById('auth-screen').classList.add('hidden');
+                        initLobbySocket();
+                    }
+                });
+            }
+        }
+
+        // Initialize lobby connection
+        function initLobbySocket() {
+            document.getElementById('lobby-workspace').classList.remove('hidden');
+            document.getElementById('user-name-display').textContent = myName;
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(myName)}&background=8b5cf6&color=fff&bold=true`;
+
+            // If we are already logged in as admin from local storage, ensure link shows
+            if (myName.toLowerCase() === 'admin') {
+                document.getElementById('admin-panel-link').classList.remove('hidden');
+            }
+
+            // Emit registration
+            socket.emit('join', { id: myId, name: myName });
+            
+            // Sync state regularly
+            socket.on('gameStateUpdate', (state) => {
+                const me = (state.activePlayers || []).find(p => p.id === myId);
+                if (me) {
+                    myBalance = me.balance;
+                    document.getElementById('user-balance').textContent = Number(myBalance).toLocaleString();
+                }
+            });
+
+            // Listen for global counts updates
+            socket.on('globalStatsUpdate', (stats) => {
+                document.getElementById('stats-online-count').textContent = stats.totalConnections || 0;
+                document.getElementById('spinner-room-count').textContent = stats.spinnerActive || 0;
+                document.getElementById('matka-room-count').textContent = stats.matkaActive || 0;
+                
+                // Add minor jitter counter to jackpot for liveliness
+                const baseJackpot = 140000 + (stats.totalConnections * 1250);
+                document.getElementById('jackpot-counter').textContent = Number(baseJackpot).toLocaleString();
+            });
+
+            // Listen for Global Chat messages
+            socket.on('chatMessageBroadcast', (msg) => {
+                appendChatMessage(msg);
+            });
+
+            // Listen for big winning announcements
+            socket.on('recentWinBroadcast', (winDetails) => {
+                addRecentWinItem(winDetails);
+            });
+        }
+
+        // Appending chat messages to view
+        function appendChatMessage({ name, message, time }) {
+            const container = document.getElementById('chat-messages-container');
+            const isSelf = name === myName;
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff`;
+
+            // If empty text placeholder exists, clear it
+            if (container.querySelector('div.italic')) {
+                container.innerHTML = '';
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = "chat-bubble flex gap-2.5 items-start bg-white/5 border border-white/5 p-2 rounded-xl";
+            bubble.innerHTML = `
+                <img src="${avatarUrl}" class="w-6 h-6 rounded-md">
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black ${isSelf ? 'text-purple-400' : 'text-slate-300'}">${name}</span>
+                        <span class="text-[8px] text-slate-500">${time || 'now'}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-0.5 break-all leading-normal font-semibold">${message}</p>
+                </div>
+            `;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Submit chat message
+        function submitMessage() {
+            const input = document.getElementById('chat-input');
+            const msgText = input.value.trim();
+            if (!msgText) return;
+
+            socket.emit('chatMessage', { name: myName, message: msgText });
+            input.value = '';
+        }
+
+        document.getElementById('send-chat-btn').onclick = submitMessage;
+        document.getElementById('chat-input').onkeydown = (e) => {
+            if (e.key === 'Enter') submitMessage();
+        };
+
+        // Add items to recent winners feed
+        function addRecentWinItem({ name, game, profit }) {
+            const feed = document.getElementById('recent-wins-feed');
+            if (feed.querySelector('div.italic')) {
+                feed.innerHTML = '';
+            }
+
+            const winItem = document.createElement('div');
+            winItem.className = "chat-bubble flex items-center justify-between bg-emerald-950/20 border border-emerald-900/10 px-3.5 py-2.5 rounded-xl";
+            winItem.innerHTML = `
+                <div>
+                    <span class="text-xs font-black text-slate-200 block">${name}</span>
+                    <span class="text-[9px] text-slate-500 uppercase tracking-widest font-extrabold">${game}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-black text-emerald-400 block">+${Number(profit).toLocaleString()}</span>
+                    <span class="text-[8px] text-slate-500 uppercase">Payout</span>
+                </div>
+            `;
+
+            feed.insertBefore(winItem, feed.firstChild);
+            if (feed.children.length > 5) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Log out trigger
+        function logoutSession() {
+            localStorage.removeItem('PLAYER_NAME');
+            localStorage.removeItem('PLAYER_UID');
+            location.reload();
+        }
+
+        // Particles canvas rendering logic
+        function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let w = canvas.width = window.innerWidth;
+            let h = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            });
+
+            const particles = [];
+            const pCount = Math.floor((w * h) / 16000); 
+
+            for (let i = 0; i < pCount; i++) {
+                particles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    r: Math.random() * 1.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.25,
+                    vy: (Math.random() - 0.5) * 0.25,
+                    alpha: Math.random() * 0.5 + 0.1
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(139, 92, 246, 0.4)';
+
+                particles.forEach(p => {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0 || p.x > w) p.vx = -p.vx;
+                    if (p.y < 0 || p.y > h) p.vy = -p.vy;
+                });
+
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>

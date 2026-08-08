@@ -1,0 +1,11 @@
+{
+  "players": [
+    {
+      "uid": "admin",
+      "name": "admin",
+      "password": "admin123",
+      "balance": 101440,
+      "role": "admin"
+    }
+  ]
+}
